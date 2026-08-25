@@ -91,6 +91,7 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
 
 .pg-grid-superior{display:grid;grid-template-columns:1fr;gap:22px;margin-top:30px;align-items:start;}
 @media(min-width:760px){.pg-grid-superior{grid-template-columns:1fr 1fr;}}
+.pg-col-principal,.pg-col-secundaria{display:flex;flex-direction:column;gap:22px;min-width:0;}
 .pg-grid-inferior{display:grid;grid-template-columns:1fr;gap:22px;margin-top:22px;align-items:start;}
 
 .pg-card{background:var(--sup);border:1px solid var(--linea);border-radius:3px;padding:18px;}
@@ -261,6 +262,13 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
 
 @media(prefers-reduced-motion:reduce){.pg *{transition:none!important;animation:none!important;}}
 </style>
+<!-- PDF.js: única forma viable de leer PDFs (extractos bancarios) sin backend propio.
+     Se distribuye como módulo ES (.mjs), por eso se importa y se expone como global. -->
+<script type="module">
+  import * as pdfjsLib from "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/6.2.108/pdf.min.mjs";
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/6.2.108/pdf.worker.min.mjs";
+  window.pdfjsLib = pdfjsLib;
+</script>
 </head>
 <body>
 <div class="pg">
@@ -324,6 +332,7 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
 
   <div class="pg-grid-superior">
 
+    <div class="pg-col-principal">
     <div class="pg-card">
       <h2 class="pg-tit"><span id="tituloAnadir">Añadir gasto</span>
         <button class="pg-colapsar" type="button" data-colapsar="cuerpoAnadirGasto" aria-expanded="true" aria-label="" style="margin-left:auto"></button>
@@ -357,7 +366,9 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
         <p class="pg-error" id="error"></p>
       </div>
     </div>
+    </div>
 
+    <div class="pg-col-secundaria">
     <div class="pg-card">
       <h2 class="pg-tit" id="tituloAhorro">Ahorro <span id="lblOpcional">opcional</span>
         <button class="pg-colapsar" type="button" data-colapsar="cuerpoAhorro" aria-expanded="true" aria-label="" style="margin-left:auto"></button>
@@ -384,9 +395,7 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
       </div>
     </div>
 
-  </div>
-
-  <div class="pg-card" id="cardRecurrentes" style="margin-top:22px">
+    <div class="pg-card" id="cardRecurrentes">
     <h2 class="pg-tit"><span id="tituloRecurrentesModal">Pagos recurrentes</span>
       <button class="pg-colapsar" type="button" data-colapsar="cuerpoRecurrentes" aria-expanded="false" aria-label="" style="margin-left:auto"></button>
     </h2>
@@ -439,6 +448,22 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
     </div>
   </div>
 
+    <div class="pg-card">
+      <h2 class="pg-tit" id="tituloImportar">Importar movimientos</h2>
+      <p id="txtImportarInfo" style="font-size:12px;color:var(--tinta2);margin:0 0 12px"></p>
+      <textarea id="textoImportar" class="pg-in" rows="4"
+        style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;resize:vertical"></textarea>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <button class="pg-btn pg-btn--sec" id="subirFichero" type="button"></button>
+        <input type="file" id="ficheroImportar" accept=".csv,.txt,application/pdf,.pdf" multiple hidden>
+        <button class="pg-btn" id="analizarImportar" type="button" style="flex:1"></button>
+      </div>
+      <p class="pg-error" id="errorImportar"></p>
+    </div>
+    </div>
+
+  </div>
+
   <div class="pg-grid-inferior">
 
     <div class="pg-card">
@@ -452,19 +477,6 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
       <div id="movs"></div>
     </div>
 
-  </div>
-
-  <div class="pg-card" style="margin-top:18px">
-    <h2 class="pg-tit" id="tituloImportar">Importar movimientos</h2>
-    <p id="txtImportarInfo" style="font-size:12px;color:var(--tinta2);margin:0 0 12px"></p>
-    <textarea id="textoImportar" class="pg-in" rows="4"
-      style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;resize:vertical"></textarea>
-    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-      <button class="pg-btn pg-btn--sec" id="subirFichero" type="button"></button>
-      <input type="file" id="ficheroImportar" accept=".csv,.txt" multiple hidden>
-      <button class="pg-btn" id="analizarImportar" type="button" style="flex:1"></button>
-    </div>
-    <p class="pg-error" id="errorImportar"></p>
   </div>
 
   <div class="pg-pieapp">
@@ -503,22 +515,25 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
     <div class="pg-modal">
       <h3 id="tituloPerfiles">¿Quién eres?</h3>
       <div class="pg-perfiles" id="listaPerfiles"></div>
-      <div style="display:flex;justify-content:center;margin-bottom:14px">
-        <button type="button" id="btnFotoNuevoPerfil" class="pg-avatar-btn" aria-label="">
-          <span class="pg-avatar pg-avatar--enorme" id="avatarNuevoPerfilPreview">+</span>
-        </button>
-        <input type="file" id="ficheroFotoNuevoPerfil" accept="image/*" hidden>
+      <button class="pg-link" id="btnMostrarCrearPerfil" type="button" style="margin-bottom:6px"></button>
+      <div id="formNuevoPerfil" hidden>
+        <div style="display:flex;justify-content:center;margin:10px 0 14px">
+          <button type="button" id="btnFotoNuevoPerfil" class="pg-avatar-btn" aria-label="">
+            <span class="pg-avatar pg-avatar--enorme" id="avatarNuevoPerfilPreview">+</span>
+          </button>
+          <input type="file" id="ficheroFotoNuevoPerfil" accept="image/*" hidden>
+        </div>
+        <div class="pg-campo">
+          <label class="pg-lab" id="lblNombrePerfil" for="nuevoPerfilNombre">Nombre</label>
+          <input id="nuevoPerfilNombre" class="pg-in" placeholder="Tu nombre" autocomplete="off" maxlength="60">
+        </div>
+        <div class="pg-campo">
+          <label class="pg-lab" id="lblEmailPerfil" for="nuevoPerfilEmail">Email (opcional)</label>
+          <input id="nuevoPerfilEmail" class="pg-in" type="email" placeholder="tu@email.com" autocomplete="off">
+        </div>
+        <button class="pg-btn" id="crearPerfilBtn" type="button"></button>
+        <p class="pg-error" id="errorPerfil"></p>
       </div>
-      <div class="pg-campo">
-        <label class="pg-lab" id="lblNombrePerfil" for="nuevoPerfilNombre">Nombre</label>
-        <input id="nuevoPerfilNombre" class="pg-in" placeholder="Tu nombre" autocomplete="off" maxlength="60">
-      </div>
-      <div class="pg-campo">
-        <label class="pg-lab" id="lblEmailPerfil" for="nuevoPerfilEmail">Email (opcional)</label>
-        <input id="nuevoPerfilEmail" class="pg-in" type="email" placeholder="tu@email.com" autocomplete="off">
-      </div>
-      <button class="pg-btn" id="crearPerfilBtn" type="button"></button>
-      <p class="pg-error" id="errorPerfil"></p>
       <button class="pg-link" id="cancelarPerfiles" type="button" style="margin-top:12px" hidden></button>
     </div>
   </div>
@@ -598,7 +613,7 @@ var I18N = {
     "titulo.desglose":"Desglose por categoría","titulo.movimientos":"Movimientos",
     "btn.vaciarMes":"Vaciar {{mes}}","btn.descargar":"Descargar copia","btn.restaurar":"Restaurar copia",
     "titulo.importar":"Importar movimientos",
-    "txt.importarInfo":"Pega el texto copiado de tu banco o sube uno o varios CSV/TXT (por ejemplo, de distintos bancos). Revisarás cada línea antes de guardar nada; las transferencias entre esas cuentas se detectan y se dejan desmarcadas automáticamente.",
+    "txt.importarInfo":"Pega el texto copiado de tu banco o sube uno o varios ficheros CSV, TXT o PDF (por ejemplo, extractos de distintos bancos). Revisarás cada línea antes de guardar nada; las transferencias entre esas cuentas se detectan y se dejan desmarcadas automáticamente.",
     "placeholder.importar":"15/03/2026  Compra supermercado  -42,10€\n16/03/2026  Nómina  +1800,00€",
     "btn.subirFichero":"Subir fichero(s)","btn.analizar":"Analizar","titulo.revisar":"Revisa los movimientos",
     "import.transferencia":"Posible transferencia — excluida",
@@ -616,6 +631,7 @@ var I18N = {
     "cat.servicios":"Servicios","cat.ocio":"Ocio","cat.salud":"Salud","cat.otros":"Otros",
     "titulo.perfiles":"¿Quién eres?","lbl.nombre":"Nombre","placeholder.nombre":"Tu nombre",
     "lbl.email":"Email (opcional)","btn.crearPerfil":"Crear perfil","perfil.errorNombre":"Escribe un nombre.",
+    "btn.mostrarCrearPerfil":"+ Crear perfil nuevo",
     "perfil.migrado":"Tu perfil","menu.salir":"SALIR",
     "menu.editarPerfil":"Editar perfil","titulo.editarPerfil":"Editar perfil",
     "perfil.cambiarFoto":"Cambiar foto de perfil","perfil.quitarFoto":"Quitar foto",
@@ -696,7 +712,7 @@ var I18N = {
     "titulo.desglose":"Breakdown by category","titulo.movimientos":"Transactions",
     "btn.vaciarMes":"Clear {{mes}}","btn.descargar":"Download backup","btn.restaurar":"Restore backup",
     "titulo.importar":"Import transactions",
-    "txt.importarInfo":"Paste text copied from your bank, or upload one or more CSV/TXT files (e.g. from different banks). You'll review every line before anything is saved; transfers between those accounts are detected and left unchecked automatically.",
+    "txt.importarInfo":"Paste text copied from your bank, or upload one or more CSV, TXT or PDF files (e.g. statements from different banks). You'll review every line before anything is saved; transfers between those accounts are detected and left unchecked automatically.",
     "placeholder.importar":"15/03/2026  Grocery store  -42.10€\n16/03/2026  Paycheck  +1800.00€",
     "btn.subirFichero":"Upload file(s)","btn.analizar":"Analyze","titulo.revisar":"Review the transactions",
     "import.transferencia":"Possible transfer — excluded",
@@ -714,6 +730,7 @@ var I18N = {
     "cat.servicios":"Utilities","cat.ocio":"Leisure","cat.salud":"Health","cat.otros":"Other",
     "titulo.perfiles":"Who are you?","lbl.nombre":"Name","placeholder.nombre":"Your name",
     "lbl.email":"Email (optional)","btn.crearPerfil":"Create profile","perfil.errorNombre":"Enter a name.",
+    "btn.mostrarCrearPerfil":"+ Create new profile",
     "perfil.migrado":"Your profile","menu.salir":"LOG OUT",
     "menu.editarPerfil":"Edit profile","titulo.editarPerfil":"Edit profile",
     "perfil.cambiarFoto":"Change profile photo","perfil.quitarFoto":"Remove photo",
@@ -1604,6 +1621,38 @@ function normalizarImporte(s){
   if(!isFinite(n)) return null;
   return {valor: Math.round(n*100)/100, esGasto: neg ? true : esGasto};
 }
+/* extrae el texto de un PDF (extracto bancario) reconstruyendo líneas por posición: agrupa los
+   fragmentos de texto que comparten una altura (Y) parecida, y los ordena de izquierda a derecha */
+function extraerTextoDePDF(file){
+  if(!window.pdfjsLib) return Promise.reject(new Error("sin pdfjs"));
+  return file.arrayBuffer().then(function(buffer){
+    return pdfjsLib.getDocument({data:buffer}).promise;
+  }).then(function(pdf){
+    var paginas=[];
+    for(var n=1;n<=pdf.numPages;n++) paginas.push(n);
+    return paginas.reduce(function(promesa,n){
+      return promesa.then(function(lineasAcum){
+        return pdf.getPage(n).then(function(pagina){
+          return pagina.getTextContent();
+        }).then(function(contenido){
+          var filas=[];
+          contenido.items.forEach(function(item){
+            var y=item.transform[5];
+            var fila=filas.filter(function(f){ return Math.abs(f.y-y)<=2; })[0];
+            if(!fila){ fila={y:y,items:[]}; filas.push(fila); }
+            fila.items.push(item);
+          });
+          filas.sort(function(a,b){ return b.y-a.y; });
+          var lineas=filas.map(function(f){
+            return f.items.sort(function(a,b){ return a.transform[4]-b.transform[4]; })
+              .map(function(it){ return it.str; }).join(" ").replace(/\s+/g," ").trim();
+          }).filter(Boolean);
+          return lineasAcum.concat(lineas);
+        });
+      });
+    }, Promise.resolve([]));
+  }).then(function(lineas){ return lineas.join("\n"); });
+}
 function analizarTexto(txt){
   var lineas=txt.split(/\r?\n/).map(function(l){ return l.trim(); }).filter(Boolean);
   if(!lineas.length) return [];
@@ -1654,7 +1703,7 @@ function analizarTexto(txt){
       var importeTxt=nums[nums.length>1?0:nums.length-1];
       var info=normalizarImporte(importeTxt);
       if(!info) return;
-      var concepto=resto.replace(importeTxt,"").replace(/[€;,\t]+/g," ").trim().replace(/\s{2,}/g," ");
+      var concepto=resto.replace(importeTxt,"").replace(/[€;,\t]+/g," ").replace(/\b(EUR|USD|GBP)\b/gi," ").trim().replace(/\s{2,}/g," ");
       filas.push({
         fecha:fecha, concepto:concepto.slice(0,80)||t("import.sinConcepto"),
         importe:info.valor, incluir:info.esGasto, esGasto:info.esGasto, categoria:"otros", transferencia:false
@@ -2005,6 +2054,11 @@ function mostrarSelectorPerfiles(forzado){
   fotoNuevoPerfil=null;
   $("avatarNuevoPerfilPreview").style.backgroundImage="";
   $("avatarNuevoPerfilPreview").textContent="+";
+  /* si ya hay perfiles guardados, el formulario de "crear nuevo" empieza oculto para no
+     estorbar cuando solo quieres cambiar de perfil; si no hay ninguno, se muestra directamente */
+  var hayPerfiles = cargarPerfiles().length>0;
+  $("formNuevoPerfil").hidden = hayPerfiles;
+  $("btnMostrarCrearPerfil").hidden = !hayPerfiles;
   cerrarMenuUsuario();
   abrirModal("overlayPerfiles");
 }
@@ -2117,6 +2171,7 @@ function aplicarIdioma(){
   $("nuevoPerfilNombre").placeholder = t("placeholder.nombre");
   $("lblEmailPerfil").textContent = t("lbl.email");
   $("crearPerfilBtn").textContent = t("btn.crearPerfil");
+  $("btnMostrarCrearPerfil").textContent = t("btn.mostrarCrearPerfil");
   $("cancelarPerfiles").textContent = t("btn.cancelar");
   $("menuIdiomaTxt").textContent = NOMBRES_IDIOMA[LANG];
   $("menuIdiomaSub").querySelectorAll("[data-lang]").forEach(function(o){
@@ -2460,6 +2515,11 @@ function inicializarEventos(){
     var b=e.target.closest("[data-perfil]"); if(!b) return;
     entrarPerfil(b.getAttribute("data-perfil"));
   });
+  $("btnMostrarCrearPerfil").addEventListener("click", function(){
+    $("formNuevoPerfil").hidden = false;
+    $("btnMostrarCrearPerfil").hidden = true;
+    $("nuevoPerfilNombre").focus();
+  });
   $("btnFotoNuevoPerfil").addEventListener("click", function(){ $("ficheroFotoNuevoPerfil").click(); });
   $("ficheroFotoNuevoPerfil").addEventListener("change", function(e){
     var f=e.target.files[0]; if(!f) return;
@@ -2523,7 +2583,12 @@ function inicializarEventos(){
     var files=Array.from(e.target.files||[]);
     e.target.value="";
     if(!files.length) return;
+    $("errorImportar").textContent="";
     Promise.all(files.map(function(f){
+      var esPDF = f.type==="application/pdf" || /\.pdf$/i.test(f.name);
+      if(esPDF){
+        return extraerTextoDePDF(f).catch(function(){ return ""; });
+      }
       return new Promise(function(resolve){
         var lector=new FileReader();
         lector.onload=function(){ resolve(String(lector.result)); };
