@@ -41,8 +41,9 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
 .pg-meta b{font-family:'IBM Plex Mono',ui-monospace,monospace;font-weight:500;color:var(--tinta);font-variant-numeric:tabular-nums;}
 
 .pg-tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--linea);margin-bottom:10px;}
+.pg-tab-wrap{position:relative;flex:none;}
 .pg-tab{flex:none;font:inherit;background:none;border:none;border-bottom:2px solid transparent;
-  padding:9px 14px 8px;cursor:pointer;color:var(--tinta2);text-align:left;white-space:nowrap;
+  padding:9px 20px 8px 14px;cursor:pointer;color:var(--tinta2);text-align:left;white-space:nowrap;
   transition:color .15s ease,border-color .15s ease;}
 .pg-tab:hover{color:var(--tinta);}
 .pg-tab[aria-selected="true"]{color:var(--tinta);border-bottom-color:var(--pino);}
@@ -50,10 +51,14 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
 .pg-tabimp{display:block;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;
   font-variant-numeric:tabular-nums;color:var(--tinta2);margin-top:2px;}
 .pg-tab[aria-selected="true"] .pg-tabimp{color:var(--pino);}
+.pg-tab-x{position:absolute;top:4px;right:2px;width:14px;height:14px;line-height:12px;font-size:12px;
+  border-radius:50%;background:none;border:none;color:#B9C1B6;cursor:pointer;padding:0;}
+.pg-tab-x:hover{color:#B4462F;}
 .pg-tabimp--vacio{opacity:.4;}
 
 .pg-addmes{display:flex;gap:8px;align-items:center;margin:0 0 24px;}
-.pg-addmes .pg-in{width:auto;flex:none;}
+.pg-addmes .pg-in{width:auto;flex:none;padding:6px 8px;font-size:12.5px;}
+.pg-addmes .pg-btn--sec{padding:6px 10px;font-size:12px;}
 .pg-btn--sec{width:auto;flex:none;background:var(--sup);color:var(--pino);border:1px solid var(--linea);
   padding:9px 14px;font-size:13px;}
 .pg-btn--sec:hover{background:#F1F4EF;border-color:#B9C1B6;}
@@ -158,10 +163,12 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
 
 .pg-perfiles{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
 .pg-perfil-fila{display:flex;align-items:center;gap:10px;padding:9px;border:1px solid var(--linea);
-  border-radius:4px;background:#fff;cursor:pointer;text-align:left;font:inherit;width:100%;}
+  border-radius:4px;background:#fff;}
 .pg-perfil-fila:hover{border-color:#B9C1B6;}
+.pg-perfil-select{display:flex;align-items:center;gap:10px;flex:1;min-width:0;background:none;border:none;
+  padding:0;cursor:pointer;font:inherit;text-align:left;}
 .pg-perfil-nombre{display:block;font-size:13px;font-weight:600;}
-.pg-perfil-email{display:block;font-size:11.5px;color:var(--tinta2);}
+.pg-perfil-email{display:block;font-size:11.5px;color:var(--tinta2);overflow-wrap:anywhere;}
 
 .pg-catlista{display:flex;flex-direction:column;gap:2px;margin-bottom:14px;max-height:260px;overflow:auto;}
 .pg-catfila{display:flex;align-items:center;gap:8px;padding:7px 4px;}
@@ -178,6 +185,7 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
 .pg-imptabla td{padding:5px 6px;border-bottom:1px solid var(--linea);vertical-align:middle;}
 .pg-imptabla input,.pg-imptabla select{font:inherit;font-size:12px;border:1px solid var(--linea);
   border-radius:2px;padding:4px 5px;width:100%;background:#fff;box-sizing:border-box;}
+.pg-transf-aviso{font-size:9.5px;color:var(--tinta2);white-space:nowrap;margin-top:3px;}
 
 @media(prefers-reduced-motion:reduce){.pg *{transition:none!important;animation:none!important;}}
 </style>
@@ -305,7 +313,7 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
       style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;resize:vertical"></textarea>
     <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
       <button class="pg-btn pg-btn--sec" id="subirFichero" type="button"></button>
-      <input type="file" id="ficheroImportar" accept=".csv,.txt" hidden>
+      <input type="file" id="ficheroImportar" accept=".csv,.txt" multiple hidden>
       <button class="pg-btn" id="analizarImportar" type="button" style="flex:1"></button>
     </div>
     <p class="pg-error" id="errorImportar"></p>
@@ -378,6 +386,8 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
 var I18N = {
   es: {
     "aria.meses":"Meses","aria.mesNuevo":"Mes a añadir","aria.reparto":"Reparto del gasto por categoría",
+    "mes.borrarAria":"Eliminar {{mes}}",
+    "mes.confirmarBorrar":"Se eliminará {{mes}} y sus {{n}} gastos. ¿Seguro?",
     "btn.anadirMes":"+ Añadir mes","titulo.anadirGasto":"Añadir gasto","lbl.concepto":"Concepto",
     "placeholder.concepto":"Compra semanal","lbl.importe":"Importe (€)","placeholder.decimal":"0,00",
     "lbl.fecha":"Fecha","lbl.categoria":"Categoría","cat.gestionar":"Editar categorías",
@@ -387,9 +397,10 @@ var I18N = {
     "titulo.desglose":"Desglose por categoría","titulo.movimientos":"Movimientos",
     "btn.vaciarMes":"Vaciar {{mes}}","btn.descargar":"Descargar copia","btn.restaurar":"Restaurar copia",
     "titulo.importar":"Importar movimientos",
-    "txt.importarInfo":"Pega el texto copiado de tu banco o sube un CSV/TXT. Revisarás cada línea antes de guardar nada.",
+    "txt.importarInfo":"Pega el texto copiado de tu banco o sube uno o varios CSV/TXT (por ejemplo, de distintos bancos). Revisarás cada línea antes de guardar nada; las transferencias entre esas cuentas se detectan y se dejan desmarcadas automáticamente.",
     "placeholder.importar":"15/03/2026  Compra supermercado  -42,10€\n16/03/2026  Nómina  +1800,00€",
-    "btn.subirFichero":"Subir fichero","btn.analizar":"Analizar","titulo.revisar":"Revisa los movimientos",
+    "btn.subirFichero":"Subir fichero(s)","btn.analizar":"Analizar","titulo.revisar":"Revisa los movimientos",
+    "import.transferencia":"Posible transferencia — excluida",
     "th.fecha":"Fecha","th.concepto":"Concepto","th.importe":"Importe","th.categoria":"Categoría",
     "btn.cancelar":"Cancelar","btn.importar":"Importar {{n}} movimientos",
     "import.sinConcepto":"Movimiento sin descripción",
@@ -405,6 +416,8 @@ var I18N = {
     "titulo.perfiles":"¿Quién eres?","lbl.nombre":"Nombre","placeholder.nombre":"Tu nombre",
     "lbl.email":"Email (opcional)","btn.crearPerfil":"Crear perfil","perfil.errorNombre":"Escribe un nombre.",
     "perfil.migrado":"Tu perfil","menu.salir":"SALIR",
+    "perfil.borrarAria":"Eliminar perfil {{nombre}}",
+    "perfil.confirmarBorrar":"Se borrarán todos los datos de \"{{nombre}}\" (gastos, categorías, todo). ¿Eliminar este perfil?",
     "error.concepto":"Escribe un concepto para el gasto.",
     "error.importe":"El importe tiene que ser un número mayor que 0.",
     "guardado.ok":"Guardado en este navegador · {{hora}}",
@@ -436,6 +449,8 @@ var I18N = {
   },
   en: {
     "aria.meses":"Months","aria.mesNuevo":"Month to add","aria.reparto":"Spending breakdown by category",
+    "mes.borrarAria":"Delete {{mes}}",
+    "mes.confirmarBorrar":"{{mes}} and its {{n}} expenses will be deleted. Are you sure?",
     "btn.anadirMes":"+ Add month","titulo.anadirGasto":"Add expense","lbl.concepto":"Description",
     "placeholder.concepto":"Weekly shopping","lbl.importe":"Amount (€)","placeholder.decimal":"0.00",
     "lbl.fecha":"Date","lbl.categoria":"Category","cat.gestionar":"Edit categories",
@@ -445,9 +460,10 @@ var I18N = {
     "titulo.desglose":"Breakdown by category","titulo.movimientos":"Transactions",
     "btn.vaciarMes":"Clear {{mes}}","btn.descargar":"Download backup","btn.restaurar":"Restore backup",
     "titulo.importar":"Import transactions",
-    "txt.importarInfo":"Paste text copied from your bank, or upload a CSV/TXT file. You'll review every line before anything is saved.",
+    "txt.importarInfo":"Paste text copied from your bank, or upload one or more CSV/TXT files (e.g. from different banks). You'll review every line before anything is saved; transfers between those accounts are detected and left unchecked automatically.",
     "placeholder.importar":"15/03/2026  Grocery store  -42.10€\n16/03/2026  Paycheck  +1800.00€",
-    "btn.subirFichero":"Upload file","btn.analizar":"Analyze","titulo.revisar":"Review the transactions",
+    "btn.subirFichero":"Upload file(s)","btn.analizar":"Analyze","titulo.revisar":"Review the transactions",
+    "import.transferencia":"Possible transfer — excluded",
     "th.fecha":"Date","th.concepto":"Description","th.importe":"Amount","th.categoria":"Category",
     "btn.cancelar":"Cancel","btn.importar":"Import {{n}} transactions",
     "import.sinConcepto":"Transaction without description",
@@ -463,6 +479,8 @@ var I18N = {
     "titulo.perfiles":"Who are you?","lbl.nombre":"Name","placeholder.nombre":"Your name",
     "lbl.email":"Email (optional)","btn.crearPerfil":"Create profile","perfil.errorNombre":"Enter a name.",
     "perfil.migrado":"Your profile","menu.salir":"LOG OUT",
+    "perfil.borrarAria":"Delete profile {{nombre}}",
+    "perfil.confirmarBorrar":"All data for \"{{nombre}}\" (expenses, categories, everything) will be deleted. Delete this profile?",
     "error.concepto":"Enter a description for the expense.",
     "error.importe":"The amount must be a number greater than 0.",
     "guardado.ok":"Saved on this device · {{hora}}",
@@ -576,6 +594,22 @@ function listaMeses(){
   s.add(mes);
   return [...s].sort();
 }
+/* elimina un mes de la barra: borra sus gastos, presupuesto e ingreso, no solo la pestaña */
+function eliminarMes(m){
+  estado.gastos = estado.gastos.filter(function(g){ return mesDe(g.fecha)!==m; });
+  delete estado.presupuestos[m];
+  delete estado.ingresos[m];
+  estado.meses = (estado.meses||[]).filter(function(x){ return x!==m; });
+  if(mes===m){
+    var s=new Set(estado.meses||[]);
+    estado.gastos.forEach(function(g){ s.add(mesDe(g.fecha)); });
+    Object.keys(estado.presupuestos).forEach(function(k){ if(estado.presupuestos[k]) s.add(k); });
+    Object.keys(estado.ingresos).forEach(function(k){ if(estado.ingresos[k]) s.add(k); });
+    var restantes=[...s].sort();
+    mes = restantes.length ? restantes[restantes.length-1] : mesDe(hoyISO());
+  }
+  guardarEstado();
+}
 function diaCorto(iso){
   var a=+iso.slice(0,4), m=+iso.slice(5,7), d=+iso.slice(8,10);
   return new Date(a,m-1,d).toLocaleDateString(localeActual(),{day:"2-digit",month:"short"}).replace(".","");
@@ -595,6 +629,9 @@ function esc(s){
   return String(s).replace(/[&<>"']/g,function(c){
     return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
   });
+}
+function esIOS(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 }
 
 /* ---------- datos de ejemplo ---------- */
@@ -806,9 +843,12 @@ function render(){
   });
   $("tabs").innerHTML = listaM.map(function(m){
     var tm=totalPorMes[m]||0;
-    return '<button class="pg-tab" role="tab" data-mes="'+m+'" aria-selected="'+(m===mes)+'">'+
+    return '<div class="pg-tab-wrap">'+
+      '<button class="pg-tab" role="tab" data-mes="'+m+'" aria-selected="'+(m===mes)+'">'+
       '<span class="pg-tabnom">'+mesCorto(m)+'</span>'+
-      '<span class="pg-tabimp'+(tm?"":" pg-tabimp--vacio")+'">'+(tm?eurCorto.format(tm):"—")+'</span></button>';
+      '<span class="pg-tabimp'+(tm?"":" pg-tabimp--vacio")+'">'+(tm?eurCorto.format(tm):"—")+'</span></button>'+
+      '<button class="pg-tab-x" type="button" data-borrarmes="'+m+'" aria-label="'+t("mes.borrarAria",{mes:mesCorto(m)})+'">×</button>'+
+      '</div>';
   }).join("");
   var act=$("tabs").querySelector('[aria-selected="true"]');
   if(act) act.scrollIntoView({inline:"center",block:"nearest"});
@@ -1074,7 +1114,7 @@ function analizarTexto(txt){
       if(!fecha || !info) continue;
       filas.push({
         fecha:fecha, concepto:(idxConcepto>-1?f[idxConcepto]:"").slice(0,80)||t("import.sinConcepto"),
-        importe:info.valor, incluir:info.esGasto, categoria:"otros"
+        importe:info.valor, incluir:info.esGasto, categoria:"otros", transferencia:false
       });
     }
   }else{
@@ -1092,9 +1132,32 @@ function analizarTexto(txt){
       var concepto=resto.replace(importeTxt,"").replace(/[€;,\t]+/g," ").trim().replace(/\s{2,}/g," ");
       filas.push({
         fecha:fecha, concepto:concepto.slice(0,80)||t("import.sinConcepto"),
-        importe:info.valor, incluir:info.esGasto, categoria:"otros"
+        importe:info.valor, incluir:info.esGasto, categoria:"otros", transferencia:false
       });
     });
+  }
+  return filas;
+}
+/* marca como posible transferencia entre cuentas cada par gasto/ingreso del mismo importe
+   en fechas cercanas (útil al importar varios bancos a la vez) y las excluye por defecto */
+function detectarTransferencias(filas){
+  var usadas={};
+  for(var i=0;i<filas.length;i++){
+    if(usadas[i]) continue;
+    var a=filas[i];
+    var absA=Math.round(Math.abs(a.importe)*100);
+    for(var j=i+1;j<filas.length;j++){
+      if(usadas[j]) continue;
+      var b=filas[j];
+      if(usadas[j] || Math.round(Math.abs(b.importe)*100)!==absA) continue;
+      if(a.incluir===b.incluir) continue;
+      var dias=Math.abs(Math.round((new Date(b.fecha).getTime()-new Date(a.fecha).getTime())/86400000));
+      if(dias>2) continue;
+      usadas[i]=true; usadas[j]=true;
+      a.incluir=false; a.transferencia=true;
+      b.incluir=false; b.transferencia=true;
+      break;
+    }
   }
   return filas;
 }
@@ -1110,7 +1173,9 @@ function mostrarPreviaImportacion(filas){
   }).join("");
   $("filasImportar").innerHTML=filas.map(function(f,i){
     return '<tr data-fila="'+i+'">'+
-      '<td><input type="checkbox" data-campo="incluir"'+(f.incluir?" checked":"")+'></td>'+
+      '<td><input type="checkbox" data-campo="incluir"'+(f.incluir?" checked":"")+'>'+
+      (f.transferencia ? '<div class="pg-transf-aviso">'+t("import.transferencia")+'</div>' : '')+
+      '</td>'+
       '<td><input type="date" data-campo="fecha" value="'+f.fecha+'"></td>'+
       '<td><input type="text" data-campo="concepto" value="'+esc(f.concepto)+'"></td>'+
       '<td><input type="text" inputmode="decimal" data-campo="importe" value="'+decimalATexto(f.importe)+'"></td>'+
@@ -1189,19 +1254,40 @@ function cerrarMenuUsuario(){
   $("menuIdiomaSub").classList.remove("pg-abierto");
 }
 
-/* ---------- perfiles: selector y alta ---------- */
+/* ---------- perfiles: selector, alta y baja ---------- */
 function renderListaPerfiles(){
   $("listaPerfiles").innerHTML = cargarPerfiles().map(function(p){
-    return '<button type="button" class="pg-perfil-fila" data-perfil="'+p.id+'">'+
+    return '<div class="pg-perfil-fila">'+
+      '<button type="button" class="pg-perfil-select" data-perfil="'+p.id+'">'+
       '<span class="pg-avatar">'+esc(inicialesDe(p.nombre))+'</span>'+
       '<span><span class="pg-perfil-nombre">'+esc(p.nombre)+'</span>'+
       (p.email ? '<span class="pg-perfil-email">'+esc(p.email)+'</span>' : '')+
-      '</span></button>';
+      '</span></button>'+
+      '<button class="pg-x" type="button" data-borrarperfil="'+p.id+'" aria-label="'+t("perfil.borrarAria",{nombre:esc(p.nombre)})+'">×</button>'+
+      '</div>';
   }).join("");
 }
+function eliminarPerfil(id){
+  var perfiles=cargarPerfiles().filter(function(p){ return p.id!==id; });
+  guardarPerfiles(perfiles);
+  try{
+    localStorage.removeItem("panel-gastos:data:"+id);
+    localStorage.removeItem("panel-gastos:ultimaCopia:"+id);
+  }catch(e){}
+  if(perfilActivoId===id){
+    perfilActivoId=null;
+    try{ localStorage.removeItem(CLAVE_ACTIVO); }catch(e){}
+  }
+}
+var selectorPerfilesForzado=false;
+function actualizarBotonCancelarPerfiles(){
+  var activoValido = !!perfilActivoId && cargarPerfiles().some(function(p){ return p.id===perfilActivoId; });
+  $("cancelarPerfiles").hidden = selectorPerfilesForzado || !activoValido;
+}
 function mostrarSelectorPerfiles(forzado){
+  selectorPerfilesForzado=!!forzado;
   renderListaPerfiles();
-  $("cancelarPerfiles").hidden = !!forzado || cargarPerfiles().length===0;
+  actualizarBotonCancelarPerfiles();
   $("errorPerfil").textContent="";
   $("nuevoPerfilNombre").value="";
   $("nuevoPerfilEmail").value="";
@@ -1316,6 +1402,19 @@ function inicializarEventos(){
   });
 
   $("tabs").addEventListener("click", function(e){
+    var del=e.target.closest("[data-borrarmes]");
+    if(del){
+      var m=del.getAttribute("data-borrarmes");
+      var n=estado.gastos.filter(function(g){ return mesDe(g.fecha)===m; }).length;
+      if(confirm(t("mes.confirmarBorrar",{mes:mesCorto(m), n:n}))){
+        eliminarMes(m);
+        if(!$("fecha").value || mesDe($("fecha").value)!==mes){
+          $("fecha").value = (mes===mesDe(hoyISO())) ? hoyISO() : mes+"-01";
+        }
+        render();
+      }
+      return;
+    }
     var b=e.target.closest("[data-mes]"); if(!b) return;
     mes=b.getAttribute("data-mes");
     if(!$("fecha").value || mesDe($("fecha").value)!==mes){
@@ -1368,7 +1467,10 @@ function inicializarEventos(){
   $("descargar").addEventListener("click", function(){
     var nombreArchivo="gastos-"+hoyISO()+".json";
     var blob=new Blob([JSON.stringify(estado,null,2)],{type:"application/json"});
-    if(typeof navigator.share==="function" && typeof navigator.canShare==="function"){
+    /* la hoja de compartir solo hace falta en iOS: la descarga normal ya funciona bien
+       en el resto de navegadores, y en Windows/Android navigator.share abriría el panel
+       nativo de "Compartir" en vez de descargar el archivo directamente */
+    if(esIOS() && typeof navigator.share==="function" && typeof navigator.canShare==="function"){
       var archivo=new File([blob], nombreArchivo, {type:"application/json"});
       if(navigator.canShare({files:[archivo]})){
         navigator.share({files:[archivo], title:nombreArchivo}).then(marcarCopiaHecha).catch(function(){});
@@ -1437,6 +1539,17 @@ function inicializarEventos(){
 
   /* selector de perfiles */
   $("listaPerfiles").addEventListener("click", function(e){
+    var del=e.target.closest("[data-borrarperfil]");
+    if(del){
+      var id=del.getAttribute("data-borrarperfil");
+      var p=cargarPerfiles().filter(function(x){ return x.id===id; })[0];
+      if(p && confirm(t("perfil.confirmarBorrar",{nombre:p.nombre}))){
+        eliminarPerfil(id);
+        renderListaPerfiles();
+        actualizarBotonCancelarPerfiles();
+      }
+      return;
+    }
     var b=e.target.closest("[data-perfil]"); if(!b) return;
     entrarPerfil(b.getAttribute("data-perfil"));
   });
@@ -1491,14 +1604,24 @@ function inicializarEventos(){
   /* importación de movimientos */
   $("subirFichero").addEventListener("click", function(){ $("ficheroImportar").click(); });
   $("ficheroImportar").addEventListener("change", function(e){
-    var f=e.target.files[0]; if(!f) return;
-    var lector=new FileReader();
-    lector.onload=function(){ $("textoImportar").value = String(lector.result); };
-    lector.readAsText(f);
+    var files=Array.from(e.target.files||[]);
     e.target.value="";
+    if(!files.length) return;
+    Promise.all(files.map(function(f){
+      return new Promise(function(resolve){
+        var lector=new FileReader();
+        lector.onload=function(){ resolve(String(lector.result)); };
+        lector.onerror=function(){ resolve(""); };
+        lector.readAsText(f);
+      });
+    })).then(function(textos){
+      var todasFilas=[];
+      textos.forEach(function(txt){ todasFilas=todasFilas.concat(analizarTexto(txt)); });
+      mostrarPreviaImportacion(detectarTransferencias(todasFilas));
+    });
   });
   $("analizarImportar").addEventListener("click", function(){
-    mostrarPreviaImportacion(analizarTexto($("textoImportar").value));
+    mostrarPreviaImportacion(detectarTransferencias(analizarTexto($("textoImportar").value)));
   });
   $("filasImportar").addEventListener("change", function(e){
     var tr=e.target.closest("tr"); if(!tr) return;
