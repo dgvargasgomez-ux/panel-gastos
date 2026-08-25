@@ -60,6 +60,7 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
 
 .pg-pieapp{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:28px;
   padding-top:14px;border-top:1px solid var(--linea);font-size:11.5px;color:var(--tinta2);}
+.pg-aviso{color:#B4462F;font-weight:600;}
 
 .pg-tira{display:flex;height:26px;margin-top:20px;border:1px solid var(--linea);border-radius:2px;overflow:hidden;}
 .pg-seg{transition:width .45s cubic-bezier(.4,0,.2,1),opacity .18s ease;}
@@ -312,6 +313,7 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
 
   <div class="pg-pieapp">
     <span id="estadoGuardado">Guardado en este navegador</span>
+    <span id="recordatorioCopia" hidden></span>
     <button class="pg-link" id="descargar">Descargar copia</button>
     <button class="pg-link" id="restaurar">Restaurar copia</button>
     <input type="file" id="ficheroCopia" accept="application/json" hidden>
@@ -407,6 +409,10 @@ var I18N = {
     "error.importe":"El importe tiene que ser un número mayor que 0.",
     "guardado.ok":"Guardado en este navegador · {{hora}}",
     "guardado.error":"Este navegador no deja guardar los datos. Descarga una copia antes de cerrar.",
+    "copia.nunca":"Nunca has hecho una copia de seguridad — descárgala para no perder tus datos",
+    "copia.hoy":"Copia de seguridad guardada hoy",
+    "copia.haceUnDia":"Última copia hace 1 día",
+    "copia.haceDiasTpl":"Última copia hace {{n}} días",
     "confirm.restaurar":"La copia tiene {{n}} gastos y sustituye lo que hay ahora. ¿Seguimos?",
     "alert.restaurarInvalido":"Ese fichero no es una copia válida del panel.",
     "meta.movimientoSing":"movimiento","meta.movimientoPlur":"movimientos","meta.alDia":"al día",
@@ -461,6 +467,10 @@ var I18N = {
     "error.importe":"The amount must be a number greater than 0.",
     "guardado.ok":"Saved on this device · {{hora}}",
     "guardado.error":"This browser won't let us save your data. Download a backup before closing.",
+    "copia.nunca":"You've never made a backup — download one so you don't lose your data",
+    "copia.hoy":"Backup saved today",
+    "copia.haceUnDia":"Last backup 1 day ago",
+    "copia.haceDiasTpl":"Last backup {{n}} days ago",
     "confirm.restaurar":"This backup has {{n}} expenses and will replace what's here now. Continue?",
     "alert.restaurarInvalido":"That file isn't a valid backup for this app.",
     "meta.movimientoSing":"transaction","meta.movimientoPlur":"transactions","meta.alDia":"per day",
@@ -647,6 +657,7 @@ function inicialesDe(nombre){
   return ini.toUpperCase();
 }
 function claveDatos(){ return "panel-gastos:data:"+perfilActivoId; }
+function claveUltimaCopia(){ return "panel-gastos:ultimaCopia:"+perfilActivoId; }
 
 /* localiza o migra perfiles al arrancar; devuelve el id de perfil activo, o null si hay que elegir/crear uno */
 function inicializarPerfiles(){
@@ -730,6 +741,28 @@ function marcarGuardado(ok){
   el.textContent = ok
     ? t("guardado.ok",{hora:new Date().toLocaleTimeString(localeActual(),{hour:"2-digit",minute:"2-digit"})})
     : t("guardado.error");
+}
+function marcarCopiaHecha(){
+  try{ localStorage.setItem(claveUltimaCopia(), new Date().toISOString()); }catch(e){}
+  actualizarRecordatorioCopia();
+}
+function actualizarRecordatorioCopia(){
+  var el=document.getElementById("recordatorioCopia"); if(!el) return;
+  if(!perfilActivoId){ el.hidden=true; return; }
+  var raw=null;
+  try{ raw=localStorage.getItem(claveUltimaCopia()); }catch(e){}
+  var texto, aviso;
+  if(!raw){
+    texto=t("copia.nunca"); aviso=true;
+  }else{
+    var dias=Math.floor((Date.now()-new Date(raw).getTime())/86400000);
+    if(dias<=0){ texto=t("copia.hoy"); aviso=false; }
+    else if(dias===1){ texto=t("copia.haceUnDia"); aviso=false; }
+    else{ texto=t("copia.haceDiasTpl",{n:dias}); aviso=dias>=7; }
+  }
+  el.textContent=texto;
+  el.classList.toggle("pg-aviso", aviso);
+  el.hidden=false;
 }
 
 /* ---------- categorías: alta y baja ---------- */
@@ -1262,6 +1295,7 @@ function aplicarIdioma(){
   });
   $("menuSalir").textContent = t("menu.salir");
   actualizarMenuUsuario();
+  actualizarRecordatorioCopia();
   renderChips();
   renderPaletaNuevaCategoria();
   if(!$("overlayCategorias").hidden) renderModalCategorias();
@@ -1332,12 +1366,21 @@ function inicializarEventos(){
   });
 
   $("descargar").addEventListener("click", function(){
+    var nombreArchivo="gastos-"+hoyISO()+".json";
     var blob=new Blob([JSON.stringify(estado,null,2)],{type:"application/json"});
+    if(typeof navigator.share==="function" && typeof navigator.canShare==="function"){
+      var archivo=new File([blob], nombreArchivo, {type:"application/json"});
+      if(navigator.canShare({files:[archivo]})){
+        navigator.share({files:[archivo], title:nombreArchivo}).then(marcarCopiaHecha).catch(function(){});
+        return;
+      }
+    }
     var a=document.createElement("a");
     a.href=URL.createObjectURL(blob);
-    a.download="gastos-"+hoyISO()+".json";
+    a.download=nombreArchivo;
     a.click();
     URL.revokeObjectURL(a.href);
+    marcarCopiaHecha();
   });
 
   $("restaurar").addEventListener("click", function(){ $("ficheroCopia").click(); });
