@@ -89,10 +89,12 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
 .pg-seg--resto{background:repeating-linear-gradient(135deg,transparent 0 5px,rgba(22,33,28,.11) 5px 6px);}
 .pg-pie{display:flex;justify-content:space-between;gap:12px;margin-top:8px;font-size:12px;color:var(--tinta2);}
 
-.pg-grid-superior{display:grid;grid-template-columns:1fr;gap:22px;margin-top:30px;align-items:start;}
+.pg-grid-superior{display:grid;grid-template-columns:1fr;gap:22px;margin-top:22px;align-items:start;}
 @media(min-width:760px){.pg-grid-superior{grid-template-columns:1fr 1fr;}}
 .pg-col-principal,.pg-col-secundaria{display:flex;flex-direction:column;gap:22px;min-width:0;}
 .pg-grid-inferior{display:grid;grid-template-columns:1fr;gap:22px;margin-top:22px;align-items:start;}
+.pg-seccion-tit{font-family:'Public Sans',sans-serif;font-weight:700;font-size:11px;text-transform:uppercase;
+  letter-spacing:.09em;color:var(--tinta2);margin:34px 0 -6px;}
 
 .pg-card{background:var(--sup);border:1px solid var(--linea);border-radius:3px;padding:18px;}
 .pg-colapsar{background:none;border:1px solid var(--linea);border-radius:50%;width:22px;height:22px;
@@ -312,24 +314,56 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
     </div>
   </div>
 
-  <div class="pg-top">
-    <div>
-      <div class="pg-eyebrow" id="eyebrow">Gastos</div>
-      <div class="pg-total" id="total">0,00 €</div>
-      <div class="pg-meta" id="meta"></div>
-      <div class="pg-presbar" id="presBarWrap" hidden>
-        <div class="pg-presbar-fill" id="presBarFill"></div>
-        <div class="pg-presbar-fill pg-presbar-pendiente" id="presBarPendiente"></div>
+  <div class="pg-grid-superior">
+
+    <div class="pg-card">
+      <div class="pg-top">
+        <div>
+          <div class="pg-eyebrow" id="eyebrow">Gastos</div>
+          <div class="pg-total" id="total">0,00 €</div>
+          <div class="pg-meta" id="meta"></div>
+          <div class="pg-presbar" id="presBarWrap" hidden>
+            <div class="pg-presbar-fill" id="presBarFill"></div>
+            <div class="pg-presbar-fill pg-presbar-pendiente" id="presBarPendiente"></div>
+          </div>
+        </div>
+      </div>
+      <div class="pg-tira" id="tira" role="img" aria-label="Reparto del gasto por categoría"></div>
+      <div class="pg-pie">
+        <span id="pieTxt"></span>
+        <span class="pg-mono" id="piePres"></span>
       </div>
     </div>
+
+    <div class="pg-card">
+      <h2 class="pg-tit" id="tituloAhorro">Ahorro <span id="lblOpcional">opcional</span>
+        <button class="pg-colapsar" type="button" data-colapsar="cuerpoAhorro" aria-expanded="true" aria-label="" style="margin-left:auto"></button>
+      </h2>
+      <div id="cuerpoAhorro">
+        <div class="pg-fila pg-campo">
+          <div>
+            <label class="pg-lab" id="lblIngresos" for="ingresos">Ingresos del mes (€)</label>
+            <input id="ingresos" class="pg-in pg-in--num" inputmode="decimal" placeholder="0,00">
+          </div>
+          <div>
+            <label class="pg-lab" id="lblPresupuesto" for="presupuesto">Presupuesto (€)</label>
+            <input id="presupuesto" class="pg-in pg-in--num" inputmode="decimal" placeholder="0,00">
+          </div>
+        </div>
+        <label class="pg-check-fijar" style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--tinta2);margin:-6px 0 13px">
+          <input type="checkbox" id="presupuestoFijarTodos">
+          <span id="lblFijarTodos">Aplicar este presupuesto a todos los meses</span>
+        </label>
+        <p id="txtAhorroInfo" style="font-size:12px;color:var(--tinta2);margin:0 0 0">
+          Lo no gastado del presupuesto y el sobrante del ingreso van al bote de ahorro.
+        </p>
+        <div id="ahorroResumen"></div>
+      </div>
+    </div>
+
   </div>
 
-  <div class="pg-tira" id="tira" role="img" aria-label="Reparto del gasto por categoría"></div>
-  <div class="pg-pie">
-    <span id="pieTxt"></span>
-    <span class="pg-mono" id="piePres"></span>
-  </div>
-
+  <h2 class="pg-seccion-tit" id="tituloSeccionAnadir">Añadir movimientos</h2>
   <div class="pg-grid-superior">
 
     <div class="pg-col-principal">
@@ -370,85 +404,6 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
 
     <div class="pg-col-secundaria">
     <div class="pg-card">
-      <h2 class="pg-tit" id="tituloAhorro">Ahorro <span id="lblOpcional">opcional</span>
-        <button class="pg-colapsar" type="button" data-colapsar="cuerpoAhorro" aria-expanded="true" aria-label="" style="margin-left:auto"></button>
-      </h2>
-      <div id="cuerpoAhorro">
-        <div class="pg-fila pg-campo">
-          <div>
-            <label class="pg-lab" id="lblIngresos" for="ingresos">Ingresos del mes (€)</label>
-            <input id="ingresos" class="pg-in pg-in--num" inputmode="decimal" placeholder="0,00">
-          </div>
-          <div>
-            <label class="pg-lab" id="lblPresupuesto" for="presupuesto">Presupuesto (€)</label>
-            <input id="presupuesto" class="pg-in pg-in--num" inputmode="decimal" placeholder="0,00">
-          </div>
-        </div>
-        <label class="pg-check-fijar" style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--tinta2);margin:-6px 0 13px">
-          <input type="checkbox" id="presupuestoFijarTodos">
-          <span id="lblFijarTodos">Aplicar este presupuesto a todos los meses</span>
-        </label>
-        <p id="txtAhorroInfo" style="font-size:12px;color:var(--tinta2);margin:0 0 0">
-          Lo que no uses del presupuesto, y lo que sobre del ingreso frente al presupuesto, va al bote de ahorro.
-        </p>
-        <div id="ahorroResumen"></div>
-      </div>
-    </div>
-
-    <div class="pg-card" id="cardRecurrentes">
-    <h2 class="pg-tit"><span id="tituloRecurrentesModal">Pagos recurrentes</span>
-      <button class="pg-colapsar" type="button" data-colapsar="cuerpoRecurrentes" aria-expanded="false" aria-label="" style="margin-left:auto"></button>
-    </h2>
-    <div id="cuerpoRecurrentes" hidden>
-      <div class="pg-catlista" id="listaRecurrentes" style="max-height:none"></div>
-      <p id="txtRecurrentesInfo" style="font-size:11.5px;color:var(--tinta2);margin:2px 0 16px"></p>
-      <h4 id="tituloFormRecurrente" style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--tinta2);margin:0 0 10px;font-weight:600"></h4>
-      <div class="pg-fila pg-campo">
-        <div>
-          <label class="pg-lab" id="lblRecConcepto" for="recConcepto">Concepto</label>
-          <input id="recConcepto" class="pg-in" maxlength="60" autocomplete="off">
-        </div>
-        <div>
-          <label class="pg-lab" id="lblRecImporte" for="recImporte">Importe (€)</label>
-          <input id="recImporte" class="pg-in pg-in--num" inputmode="decimal" placeholder="0,00">
-        </div>
-      </div>
-      <div class="pg-fila pg-campo">
-        <div>
-          <label class="pg-lab" id="lblRecTipo" for="recTipo">Tipo</label>
-          <select id="recTipo" class="pg-in">
-            <option value="gasto" id="optRecGasto"></option>
-            <option value="ingreso" id="optRecIngreso"></option>
-          </select>
-        </div>
-        <div>
-          <label class="pg-lab" id="lblRecFrecuencia" for="recFrecuencia">Frecuencia</label>
-          <select id="recFrecuencia" class="pg-in">
-            <option value="semanal" id="optFrecSemanal"></option>
-            <option value="mensual" id="optFrecMensual"></option>
-            <option value="trimestral" id="optFrecTrimestral"></option>
-            <option value="semestral" id="optFrecSemestral"></option>
-            <option value="anual" id="optFrecAnual"></option>
-          </select>
-        </div>
-      </div>
-      <div class="pg-fila pg-campo">
-        <div id="wrapRecCategoria">
-          <label class="pg-lab" id="lblRecCategoria" for="recCategoria">Categoría</label>
-          <select id="recCategoria" class="pg-in"></select>
-        </div>
-        <div>
-          <label class="pg-lab" id="lblRecFecha" for="recFecha">Próximo pago</label>
-          <input id="recFecha" type="date" class="pg-in pg-in--num">
-        </div>
-      </div>
-      <button class="pg-btn" id="guardarRecurrente" type="button"></button>
-      <button class="pg-link" id="cancelarEdicionRecurrente" type="button" hidden style="margin-top:8px"></button>
-      <p class="pg-error" id="errorRecurrente"></p>
-    </div>
-  </div>
-
-    <div class="pg-card">
       <h2 class="pg-tit" id="tituloImportar">Importar movimientos</h2>
       <p id="txtImportarInfo" style="font-size:12px;color:var(--tinta2);margin:0 0 12px"></p>
       <textarea id="textoImportar" class="pg-in" rows="4"
@@ -460,10 +415,64 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
       </div>
       <p class="pg-error" id="errorImportar"></p>
     </div>
+
+    <div class="pg-card" id="cardRecurrentes">
+      <h2 class="pg-tit"><span id="tituloRecurrentesModal">Pagos recurrentes</span>
+        <button class="pg-link" type="button" id="btnNuevoRecurrente" aria-label="" style="margin-left:auto">+</button>
+      </h2>
+      <div class="pg-catlista" id="listaRecurrentes" style="max-height:none"></div>
+      <p id="txtRecurrentesInfo" style="font-size:11.5px;color:var(--tinta2);margin:8px 0 0"></p>
+      <div id="formRecurrente" hidden style="margin-top:14px;padding-top:14px;border-top:1px solid var(--linea)">
+        <h4 id="tituloFormRecurrente" style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--tinta2);margin:0 0 10px;font-weight:600"></h4>
+        <div class="pg-fila pg-campo">
+          <div>
+            <label class="pg-lab" id="lblRecConcepto" for="recConcepto">Concepto</label>
+            <input id="recConcepto" class="pg-in" maxlength="60" autocomplete="off">
+          </div>
+          <div>
+            <label class="pg-lab" id="lblRecImporte" for="recImporte">Importe (€)</label>
+            <input id="recImporte" class="pg-in pg-in--num" inputmode="decimal" placeholder="0,00">
+          </div>
+        </div>
+        <div class="pg-fila pg-campo">
+          <div>
+            <label class="pg-lab" id="lblRecTipo" for="recTipo">Tipo</label>
+            <select id="recTipo" class="pg-in">
+              <option value="gasto" id="optRecGasto"></option>
+              <option value="ingreso" id="optRecIngreso"></option>
+            </select>
+          </div>
+          <div>
+            <label class="pg-lab" id="lblRecFrecuencia" for="recFrecuencia">Frecuencia</label>
+            <select id="recFrecuencia" class="pg-in">
+              <option value="semanal" id="optFrecSemanal"></option>
+              <option value="mensual" id="optFrecMensual"></option>
+              <option value="trimestral" id="optFrecTrimestral"></option>
+              <option value="semestral" id="optFrecSemestral"></option>
+              <option value="anual" id="optFrecAnual"></option>
+            </select>
+          </div>
+        </div>
+        <div class="pg-fila pg-campo">
+          <div id="wrapRecCategoria">
+            <label class="pg-lab" id="lblRecCategoria" for="recCategoria">Categoría</label>
+            <select id="recCategoria" class="pg-in"></select>
+          </div>
+          <div>
+            <label class="pg-lab" id="lblRecFecha" for="recFecha">Próximo pago</label>
+            <input id="recFecha" type="date" class="pg-in pg-in--num">
+          </div>
+        </div>
+        <button class="pg-btn" id="guardarRecurrente" type="button"></button>
+        <button class="pg-link" id="cancelarEdicionRecurrente" type="button" hidden style="margin-top:8px"></button>
+        <p class="pg-error" id="errorRecurrente"></p>
+      </div>
+    </div>
     </div>
 
   </div>
 
+  <h2 class="pg-seccion-tit" id="tituloSeccionDetalle">Detalle del mes</h2>
   <div class="pg-grid-inferior">
 
     <div class="pg-card">
@@ -609,11 +618,12 @@ var I18N = {
     "btn.guardarGasto":"Guardar gasto","titulo.ahorro":"Ahorro","lbl.opcional":"opcional",
     "lbl.ingresos":"Ingresos del mes (€)","lbl.presupuesto":"Presupuesto (€)",
     "lbl.fijarTodos":"Aplicar este presupuesto a todos los meses",
-    "txt.ahorroInfo":"Lo que no uses del presupuesto, y lo que sobre del ingreso frente al presupuesto, va al bote de ahorro.",
+    "txt.ahorroInfo":"Lo no gastado del presupuesto y el sobrante del ingreso van al bote de ahorro.",
     "titulo.desglose":"Desglose por categoría","titulo.movimientos":"Movimientos",
+    "titulo.seccionAnadir":"Añadir movimientos","titulo.seccionDetalle":"Detalle del mes",
     "btn.vaciarMes":"Vaciar {{mes}}","btn.descargar":"Descargar copia","btn.restaurar":"Restaurar copia",
     "titulo.importar":"Importar movimientos",
-    "txt.importarInfo":"Pega el texto copiado de tu banco o sube uno o varios ficheros CSV, TXT o PDF (por ejemplo, extractos de distintos bancos). Revisarás cada línea antes de guardar nada; las transferencias entre esas cuentas se detectan y se dejan desmarcadas automáticamente.",
+    "txt.importarInfo":"Pega el texto de tu banco o sube ficheros CSV, TXT o PDF. Podrás revisar y marcar cada línea antes de guardar; las transferencias entre cuentas se detectan solas.",
     "placeholder.importar":"15/03/2026  Compra supermercado  -42,10€\n16/03/2026  Nómina  +1800,00€",
     "btn.subirFichero":"Subir fichero(s)","btn.analizar":"Analizar","titulo.revisar":"Revisa los movimientos",
     "import.transferencia":"Posible transferencia — excluida",
@@ -683,9 +693,10 @@ var I18N = {
     "rec.vacio":"No tienes pagos ni ingresos recurrentes configurados todavía.",
     "rec.tituloNuevo":"Añadir nuevo",
     "rec.tituloEditar":"Editar pago recurrente",
-    "rec.info":"Al editar o crear un pago recurrente, el cambio solo afecta a partir de su próximo pago programado — los gastos ya generados en meses anteriores no se tocan.",
+    "rec.info":"El cambio solo afecta a partir del próximo pago programado; lo ya generado no se toca.",
     "rec.errorConcepto":"Escribe un concepto.",
     "rec.errorFecha":"Elige la fecha del próximo pago.",
+    "aria.nuevoRecurrente":"Añadir pago recurrente",
     "btn.anadirOtro":"+ Añadir otro pago",
     "onb.personalizado":"Nuevo pago personalizado",
     "titulo.onboarding":"¿Tienes pagos o ingresos que se repiten cada mes?",
@@ -708,11 +719,12 @@ var I18N = {
     "btn.guardarGasto":"Save expense","titulo.ahorro":"Savings","lbl.opcional":"optional",
     "lbl.ingresos":"Income this month (€)","lbl.presupuesto":"Budget (€)",
     "lbl.fijarTodos":"Apply this budget to every month",
-    "txt.ahorroInfo":"Whatever you don't spend from your budget, and whatever's left of your income over the budget, goes into the savings pot.",
+    "txt.ahorroInfo":"Unspent budget and leftover income go into the savings pot.",
     "titulo.desglose":"Breakdown by category","titulo.movimientos":"Transactions",
+    "titulo.seccionAnadir":"Add transactions","titulo.seccionDetalle":"Month detail",
     "btn.vaciarMes":"Clear {{mes}}","btn.descargar":"Download backup","btn.restaurar":"Restore backup",
     "titulo.importar":"Import transactions",
-    "txt.importarInfo":"Paste text copied from your bank, or upload one or more CSV, TXT or PDF files (e.g. statements from different banks). You'll review every line before anything is saved; transfers between those accounts are detected and left unchecked automatically.",
+    "txt.importarInfo":"Paste text from your bank or upload CSV, TXT or PDF files. You'll review and check each line before saving; transfers between accounts are detected automatically.",
     "placeholder.importar":"15/03/2026  Grocery store  -42.10€\n16/03/2026  Paycheck  +1800.00€",
     "btn.subirFichero":"Upload file(s)","btn.analizar":"Analyze","titulo.revisar":"Review the transactions",
     "import.transferencia":"Possible transfer — excluded",
@@ -782,9 +794,10 @@ var I18N = {
     "rec.vacio":"You don't have any recurring payments or income set up yet.",
     "rec.tituloNuevo":"Add new",
     "rec.tituloEditar":"Edit recurring payment",
-    "rec.info":"Editing or creating a recurring payment only affects its next scheduled payment onward — expenses already generated in past months stay as they are.",
+    "rec.info":"The change only affects the next scheduled payment onward; past ones stay as they are.",
     "rec.errorConcepto":"Enter a description.",
     "rec.errorFecha":"Pick the date of the next payment.",
+    "aria.nuevoRecurrente":"Add recurring payment",
     "btn.anadirOtro":"+ Add another payment",
     "onb.personalizado":"New custom payment",
     "titulo.onboarding":"Do you have payments or income that repeat every month?",
@@ -1223,7 +1236,10 @@ function eliminarRecurrente(id){
 /* ---------- render ---------- */
 var $=function(id){ return document.getElementById(id); };
 
-function render(){
+/* deriva del estado los datos del mes activo; funciones que solo necesitan actualizar
+   una parte de la pantalla (editar un movimiento, cambiar de vista en el desglose) llaman
+   a esto en vez de a render() completo, para no tocar ni la barra de meses ni el resto */
+function datosDelMes(){
   var delMes = estado.gastos.filter(function(g){ return mesDe(g.fecha)===mes; })
                             .sort(function(a,b){ return a.fecha<b.fecha?1:(a.fecha>b.fecha?-1:0); });
   var total = delMes.reduce(function(s,g){ return s+g.importe; },0);
@@ -1231,86 +1247,28 @@ function render(){
   var hoyStr = hoyISO();
   var movsDescontados = delMes.filter(function(g){ return g.fecha<=hoyStr; });
   var movsPendientes = delMes.filter(function(g){ return g.fecha>hoyStr; });
-  var totalDescontado = movsDescontados.reduce(function(s,g){ return s+g.importe; },0);
-  var totalPendiente = movsPendientes.reduce(function(s,g){ return s+g.importe; },0);
-
-  /* pestañas de mes, agrupadas por año */
-  var listaM = listaMeses();
-  var totalPorMes={};
-  estado.gastos.forEach(function(g){
-    var m=mesDe(g.fecha); totalPorMes[m]=(totalPorMes[m]||0)+g.importe;
-  });
-  var aniosDisponibles = [...new Set(listaM.map(anioDe))].sort();
-  if(anioMostrado===null || aniosDisponibles.indexOf(anioMostrado)===-1) anioMostrado=anioDe(mes);
-  var listaMAnio = listaM.filter(function(m){ return anioDe(m)===anioMostrado; });
-
-  $("btnAnioSelector").textContent = String(anioMostrado);
-  $("btnAnioSelector").hidden = aniosDisponibles.length<2;
-  $("menuAnios").innerHTML = aniosDisponibles.map(function(a){
-    return '<button type="button" class="pg-anio-opcion" data-anio="'+a+'" aria-pressed="'+(a===anioMostrado)+'">'+a+'</button>';
-  }).join("");
-
-  $("tabs").innerHTML = listaMAnio.map(function(m){
-    var tm=totalPorMes[m]||0;
-    return '<div class="pg-tab-wrap">'+
-      '<button class="pg-tab" role="tab" data-mes="'+m+'" aria-selected="'+(m===mes)+'">'+
-      '<span class="pg-tabnom">'+mesCorto(m)+'</span>'+
-      '<span class="pg-tabimp'+(tm?"":" pg-tabimp--vacio")+'">'+(tm?eurCorto.format(tm):"—")+'</span></button>'+
-      '<button class="pg-tab-x" type="button" data-borrarmes="'+m+'" aria-label="'+t("mes.borrarAria",{mes:mesCorto(m)})+'">×</button>'+
-      '</div>';
-  }).join("");
-  var act=$("tabs").querySelector('[aria-selected="true"]');
-  if(act) act.scrollIntoView({inline:"center",block:"nearest"});
-
-  var inpNuevoMes=$("nuevoMes");
-  if(document.activeElement!==inpNuevoMes){
-    var ultimoMes = listaM[listaM.length-1] || mesDe(hoyISO());
-    inpNuevoMes.value = sumarMeses(ultimoMes,1);
-  }
-
-  /* cabecera */
-  $("eyebrow").textContent = t("eyebrow.tpl",{mes:nombreMesTexto(mes)});
-  $("total").textContent = eur.format(total);
-
   var actual=mesDe(hoyISO());
   var diasTr = mes>actual ? 0 : (mes===actual ? new Date().getDate() : diasDelMes(mes));
-  var media = diasTr ? total/diasTr : 0;
+  return {delMes:delMes, total:total, presupuesto:presupuesto,
+    movsDescontados:movsDescontados, movsPendientes:movsPendientes, diasTr:diasTr};
+}
+/* centra la pestaña del mes activo — se llama solo cuando de verdad cambia el mes visible,
+   nunca desde render() en general (esa era la causa del salto de scroll al editar un
+   movimiento o cambiar de vista: se reejecutaba en cada repintado, viniera o no a cuento) */
+function centrarPestanaActiva(){
+  var act=$("tabs").querySelector('[aria-selected="true"]');
+  if(act) act.scrollIntoView({inline:"center",block:"nearest"});
+}
+function renderDesglose(d){
+  var delMes=d.delMes, total=d.total, presupuesto=d.presupuesto, diasTr=d.diasTr;
   var restante = presupuesto - total;
-  var meta = "<span><b>"+delMes.length+"</b> "+(delMes.length===1?t("meta.movimientoSing"):t("meta.movimientoPlur"))+"</span>";
-  if(diasTr>0) meta += "<span><b>"+eur.format(media)+"</b> "+t("meta.alDia")+"</span>";
-  else meta += "<span>"+t("meta.mesPorEmpezar")+"</span>";
-  if(presupuesto>0){
-    var plantillaMeta = restante>=0 ? "meta.quedaTpl" : "meta.pasasTpl";
-    meta += "<span>"+t(plantillaMeta,{importe:"<b>"+eur.format(Math.abs(restante))+"</b>", presupuesto:eurCorto.format(presupuesto)})+"</span>";
-  }
-  $("meta").innerHTML = meta;
-
-  /* barra de progreso del presupuesto (verde -> amarillo -> rojo);
-     el tramo rayado es lo pendiente de descontar este mes (pagos programados a futuro) */
-  if(presupuesto>0){
-    var pctTotal = total/presupuesto*100;
-    var pctDescontado = Math.min(100, totalDescontado/presupuesto*100);
-    var pctPendienteBarra = Math.min(100-pctDescontado, totalPendiente/presupuesto*100);
-    var colorBarra = colorPresupuesto(pctTotal);
-    $("presBarWrap").hidden=false;
-    $("presBarFill").style.width = pctDescontado+"%";
-    $("presBarFill").style.backgroundColor = colorBarra;
-    $("presBarPendiente").style.width = pctPendienteBarra+"%";
-    $("presBarPendiente").style.backgroundColor = colorBarra;
-  }else{
-    $("presBarWrap").hidden=true;
-  }
-
-  /* desglose */
   var suma={};
   delMes.forEach(function(g){ suma[g.categoria]=(suma[g.categoria]||0)+g.importe; });
   var porCat = categoriasActuales().filter(function(c){ return suma[c.id]; })
     .map(function(c){ return {id:c.id,nombre:c.nombre,color:c.color,importe:suma[c.id],pct: total? suma[c.id]/total*100 : 0}; })
     .sort(function(a,b){ return b.importe-a.importe; });
-
   var escala = presupuesto>0 ? Math.max(presupuesto,total) : total;
 
-  /* tira */
   var tira = porCat.map(function(c){
     return '<div class="pg-seg" data-cat="'+c.id+'" title="'+esc(c.nombre)+' · '+eur.format(c.importe)+
            '" style="width:'+(escala? c.importe/escala*100 : 0)+'%;background:'+c.color+'"></div>';
@@ -1325,7 +1283,6 @@ function render(){
     : t("pieTxt.primero");
   $("piePres").textContent = presupuesto>0 ? eurCorto.format(presupuesto) : "";
 
-  /* categorías */
   $("catCount").textContent = porCat.length ? t("catCount.tpl",{n:porCat.length}) : "";
   $("cats").innerHTML = porCat.length ? porCat.map(function(c){
     var expandido = c.id===categoriaExpandida;
@@ -1345,10 +1302,10 @@ function render(){
     return filaCat+'<div class="pg-cat-movs">'+movsCat+'</div>';
   }).join("") : '<p class="pg-vacio">'+t("cats.vacio")+'</p>';
 
-  /* acumulado */
   $("acum").innerHTML = acumulado(delMes, total, presupuesto, diasTr);
-
-  /* movimientos, separados entre ya descontados y pendientes de descontar este mes */
+}
+function renderMovs(d){
+  var delMes=d.delMes, movsDescontados=d.movsDescontados, movsPendientes=d.movsPendientes;
   $("vaciar").hidden = delMes.length===0;
   $("vaciar").textContent = t("btn.vaciarMes",{mes:nombreMesTexto(mes).split(" ")[0]});
   var filaMov = function(g){
@@ -1387,6 +1344,79 @@ function render(){
     }
   }
   $("movs").innerHTML = htmlMovs;
+}
+function render(){
+  var d = datosDelMes();
+  var delMes=d.delMes, total=d.total, presupuesto=d.presupuesto, diasTr=d.diasTr,
+      movsDescontados=d.movsDescontados, movsPendientes=d.movsPendientes;
+  var totalDescontado = movsDescontados.reduce(function(s,g){ return s+g.importe; },0);
+  var totalPendiente = movsPendientes.reduce(function(s,g){ return s+g.importe; },0);
+
+  /* pestañas de mes, agrupadas por año (el centrado de la pestaña activa NO va aquí:
+     ver centrarPestanaActiva) */
+  var listaM = listaMeses();
+  var totalPorMes={};
+  estado.gastos.forEach(function(g){
+    var m=mesDe(g.fecha); totalPorMes[m]=(totalPorMes[m]||0)+g.importe;
+  });
+  var aniosDisponibles = [...new Set(listaM.map(anioDe))].sort();
+  if(anioMostrado===null || aniosDisponibles.indexOf(anioMostrado)===-1) anioMostrado=anioDe(mes);
+  var listaMAnio = listaM.filter(function(m){ return anioDe(m)===anioMostrado; });
+
+  $("btnAnioSelector").textContent = String(anioMostrado);
+  $("btnAnioSelector").hidden = aniosDisponibles.length<2;
+  $("menuAnios").innerHTML = aniosDisponibles.map(function(a){
+    return '<button type="button" class="pg-anio-opcion" data-anio="'+a+'" aria-pressed="'+(a===anioMostrado)+'">'+a+'</button>';
+  }).join("");
+
+  $("tabs").innerHTML = listaMAnio.map(function(m){
+    var tm=totalPorMes[m]||0;
+    return '<div class="pg-tab-wrap">'+
+      '<button class="pg-tab" role="tab" data-mes="'+m+'" aria-selected="'+(m===mes)+'">'+
+      '<span class="pg-tabnom">'+mesCorto(m)+'</span>'+
+      '<span class="pg-tabimp'+(tm?"":" pg-tabimp--vacio")+'">'+(tm?eurCorto.format(tm):"—")+'</span></button>'+
+      '<button class="pg-tab-x" type="button" data-borrarmes="'+m+'" aria-label="'+t("mes.borrarAria",{mes:mesCorto(m)})+'">×</button>'+
+      '</div>';
+  }).join("");
+  var inpNuevoMes=$("nuevoMes");
+  if(document.activeElement!==inpNuevoMes){
+    var ultimoMes = listaM[listaM.length-1] || mesDe(hoyISO());
+    inpNuevoMes.value = sumarMeses(ultimoMes,1);
+  }
+
+  /* cabecera */
+  $("eyebrow").textContent = t("eyebrow.tpl",{mes:nombreMesTexto(mes)});
+  $("total").textContent = eur.format(total);
+
+  var media = diasTr ? total/diasTr : 0;
+  var restante = presupuesto - total;
+  var meta = "<span><b>"+delMes.length+"</b> "+(delMes.length===1?t("meta.movimientoSing"):t("meta.movimientoPlur"))+"</span>";
+  if(diasTr>0) meta += "<span><b>"+eur.format(media)+"</b> "+t("meta.alDia")+"</span>";
+  else meta += "<span>"+t("meta.mesPorEmpezar")+"</span>";
+  if(presupuesto>0){
+    var plantillaMeta = restante>=0 ? "meta.quedaTpl" : "meta.pasasTpl";
+    meta += "<span>"+t(plantillaMeta,{importe:"<b>"+eur.format(Math.abs(restante))+"</b>", presupuesto:eurCorto.format(presupuesto)})+"</span>";
+  }
+  $("meta").innerHTML = meta;
+
+  /* barra de progreso del presupuesto (verde -> amarillo -> rojo);
+     el tramo rayado es lo pendiente de descontar este mes (pagos programados a futuro) */
+  if(presupuesto>0){
+    var pctTotal = total/presupuesto*100;
+    var pctDescontado = Math.min(100, totalDescontado/presupuesto*100);
+    var pctPendienteBarra = Math.min(100-pctDescontado, totalPendiente/presupuesto*100);
+    var colorBarra = colorPresupuesto(pctTotal);
+    $("presBarWrap").hidden=false;
+    $("presBarFill").style.width = pctDescontado+"%";
+    $("presBarFill").style.backgroundColor = colorBarra;
+    $("presBarPendiente").style.width = pctPendienteBarra+"%";
+    $("presBarPendiente").style.backgroundColor = colorBarra;
+  }else{
+    $("presBarWrap").hidden=true;
+  }
+
+  renderDesglose(d);
+  renderMovs(d);
 
   /* presupuesto e ingresos (sin pisar lo que se está escribiendo) */
   var inp=$("presupuesto");
@@ -1577,6 +1607,7 @@ function anadir(){
   guardarEstado();
   $("concepto").value=""; $("importe").value="";
   render();
+  centrarPestanaActiva();
   $("concepto").focus();
 }
 
@@ -1860,6 +1891,7 @@ function cargarFormRecurrente(rec){
   $("guardarRecurrente").textContent=t("btn.guardarCambios");
   $("cancelarEdicionRecurrente").hidden=false;
   $("tituloFormRecurrente").textContent=t("rec.tituloEditar");
+  $("formRecurrente").hidden=false;
 }
 
 /* ---------- onboarding de recurrentes al crear perfil ---------- */
@@ -2071,6 +2103,7 @@ function entrarPerfil(id){
   cerrarModal("overlayPerfiles");
   aplicarIdioma();
   render();
+  centrarPestanaActiva();
 }
 function crearPerfilYEntrar(nombre,email,foto){
   var p = crearPerfil(nombre,email,foto);
@@ -2083,6 +2116,7 @@ function crearPerfilYEntrar(nombre,email,foto){
   cerrarModal("overlayPerfiles");
   aplicarIdioma();
   render();
+  centrarPestanaActiva();
   mostrarOnboardingRecurrentes();
 }
 
@@ -2118,6 +2152,8 @@ function aplicarIdioma(){
   $("ingresos").placeholder = t("placeholder.decimal");
   $("presupuesto").placeholder = t("placeholder.decimal");
   $("txtAhorroInfo").textContent = t("txt.ahorroInfo");
+  $("tituloSeccionAnadir").textContent = t("titulo.seccionAnadir");
+  $("tituloSeccionDetalle").textContent = t("titulo.seccionDetalle");
   $("tituloDesglose").textContent = t("titulo.desglose");
   $("tituloMovimientos").textContent = t("titulo.movimientos");
   $("descargar").textContent = t("btn.descargar");
@@ -2156,6 +2192,7 @@ function aplicarIdioma(){
   $("lblRecFecha").textContent = t("lbl.recFecha");
   $("cancelarEdicionRecurrente").textContent = t("btn.cancelar");
   $("txtRecurrentesInfo").textContent = t("rec.info");
+  $("btnNuevoRecurrente").setAttribute("aria-label", t("aria.nuevoRecurrente"));
   $("tituloOnboarding").textContent = t("titulo.onboarding");
   $("txtOnboarding").textContent = t("txt.onboarding");
   $("anadirOnbPersonalizado").textContent = t("btn.anadirOtro");
@@ -2165,7 +2202,7 @@ function aplicarIdioma(){
   $("guardarCiclicos").textContent = t("btn.guardarCiclicos");
   $("omitirCiclicos").textContent = t("btn.omitir");
   renderListaRecurrentes(); renderSelectorCategoriaRecurrente();
-  if(!$("cuerpoRecurrentes").hidden && !recurrenteEditandoId) limpiarFormRecurrente();
+  if(!$("formRecurrente").hidden && !recurrenteEditandoId) limpiarFormRecurrente();
   $("tituloPerfiles").textContent = t("titulo.perfiles");
   $("lblNombrePerfil").textContent = t("lbl.nombre");
   $("nuevoPerfilNombre").placeholder = t("placeholder.nombre");
@@ -2220,6 +2257,7 @@ function inicializarEventos(){
           $("fecha").value = (mes===mesDe(hoyISO())) ? hoyISO() : mes+"-01";
         }
         render();
+        centrarPestanaActiva();
       }
       return;
     }
@@ -2230,6 +2268,7 @@ function inicializarEventos(){
       $("fecha").value = (mes===mesDe(hoyISO())) ? hoyISO() : mes+"-01";
     }
     render();
+    centrarPestanaActiva();
   });
 
   function anadirMes(){
@@ -2243,6 +2282,7 @@ function inicializarEventos(){
       $("fecha").value = (mes===mesDe(hoyISO())) ? hoyISO() : mes+"-01";
     }
     guardarEstado(); render();
+    centrarPestanaActiva();
   }
   $("anadirMes").addEventListener("click", anadirMes);
   $("nuevoMes").addEventListener("keydown", function(e){ if(e.key==="Enter") anadirMes(); });
@@ -2258,6 +2298,7 @@ function inicializarEventos(){
     anioMostrado=+b.getAttribute("data-anio");
     $("menuAnios").hidden=true;
     render();
+    centrarPestanaActiva();
   });
   document.addEventListener("click", function(e){
     if(!$("menuAnios").hidden && !e.target.closest(".pg-anio-selector")){
@@ -2309,15 +2350,15 @@ function inicializarEventos(){
     var fila=e.target.closest(".pg-cat"); if(!fila) return;
     var id=fila.getAttribute("data-cat");
     categoriaExpandida = categoriaExpandida===id ? null : id;
-    render();
+    renderDesglose(datosDelMes());
   });
 
   /* editar importe/fecha de un movimiento ya guardado */
   $("movs").addEventListener("click", function(e){
     var editar=e.target.closest("[data-editarmov]");
-    if(editar){ movEditando=editar.getAttribute("data-editarmov"); render(); return; }
+    if(editar){ movEditando=editar.getAttribute("data-editarmov"); renderMovs(datosDelMes()); return; }
     var cancelar=e.target.closest("[data-cancelarmov]");
-    if(cancelar){ movEditando=null; render(); return; }
+    if(cancelar){ movEditando=null; renderMovs(datosDelMes()); return; }
     var guardar=e.target.closest("[data-guardarmov]");
     if(guardar){
       var fila=guardar.closest("[data-mov]");
@@ -2348,9 +2389,9 @@ function inicializarEventos(){
   /* gráfico de acumulado: vista/granularidad y tooltip al pasar el cursor */
   $("acum").addEventListener("click", function(e){
     var v=e.target.closest("[data-vista]");
-    if(v){ vistaAcumulado=v.getAttribute("data-vista"); render(); return; }
+    if(v){ vistaAcumulado=v.getAttribute("data-vista"); renderDesglose(datosDelMes()); return; }
     var g=e.target.closest("[data-gran]");
-    if(g){ granularidadBarras=g.getAttribute("data-gran"); render(); }
+    if(g){ granularidadBarras=g.getAttribute("data-gran"); renderDesglose(datosDelMes()); }
   });
   $("acum").addEventListener("mousemove", function(e){
     var grafico=e.target.closest("#graficoAcum");
@@ -2649,9 +2690,13 @@ function inicializarEventos(){
     mostrarCiclicosDetectados(candidatosCiclicos);
   });
 
-  /* pagos recurrentes: la tarjeta es una sección normal de la página (no un modal),
-     así que solo hace falta inicializar su formulario la primera vez */
+  /* pagos recurrentes: la lista siempre está visible; el formulario (alta o edición)
+     solo aparece bajo demanda al pulsar "+" o "Editar" sobre una fila */
   limpiarFormRecurrente();
+  $("btnNuevoRecurrente").addEventListener("click", function(){
+    limpiarFormRecurrente();
+    $("formRecurrente").hidden=false;
+  });
   $("recTipo").addEventListener("change", actualizarVisibilidadCategoriaRecurrente);
   $("listaRecurrentes").addEventListener("click", function(e){
     var editar=e.target.closest("[data-editarrec]");
@@ -2666,12 +2711,15 @@ function inicializarEventos(){
       var rec2=(estado.recurrentes||[]).filter(function(r){ return r.id===id; })[0];
       if(rec2 && confirm(t("rec.confirmarBorrar",{nombre:rec2.concepto}))){
         eliminarRecurrente(id);
-        if(recurrenteEditandoId===id) limpiarFormRecurrente();
+        if(recurrenteEditandoId===id){ limpiarFormRecurrente(); $("formRecurrente").hidden=true; }
         renderListaRecurrentes();
       }
     }
   });
-  $("cancelarEdicionRecurrente").addEventListener("click", limpiarFormRecurrente);
+  $("cancelarEdicionRecurrente").addEventListener("click", function(){
+    limpiarFormRecurrente();
+    $("formRecurrente").hidden=true;
+  });
   $("guardarRecurrente").addEventListener("click", function(){
     var concepto=$("recConcepto").value.trim();
     var n=aNumero($("recImporte").value);
@@ -2690,6 +2738,7 @@ function inicializarEventos(){
     }
     renderListaRecurrentes();
     limpiarFormRecurrente();
+    $("formRecurrente").hidden=true;
     render();
   });
 
