@@ -194,8 +194,16 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
 .pg-rec-detalle{font-size:11px;color:var(--tinta2);margin-top:1px;}
 .pg-rec-importe{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13px;white-space:nowrap;}
 .pg-rec-importe--ingreso{color:var(--pino);}
-.pg-preset-importe{width:90px;flex:none;font:inherit;font-size:12px;border:1px solid var(--linea);
-  border-radius:2px;padding:5px 7px;box-sizing:border-box;}
+.pg-onb-lista{max-height:400px;overflow:auto;margin-bottom:6px;}
+.pg-onb-fila{border-bottom:1px solid var(--linea);padding:9px 4px;}
+.pg-onb-fila:last-child{border-bottom:none;}
+.pg-onb-cabecera{display:flex;align-items:center;gap:8px;}
+.pg-onb-nombre{flex:1;min-width:0;font:inherit;font-size:13px;font-weight:600;border:1px solid transparent;
+  background:none;border-radius:2px;padding:5px 6px;}
+.pg-onb-nombre:hover,.pg-onb-nombre:focus{border-color:var(--linea);background:#fff;}
+.pg-onb-detalle{margin:10px 0 2px 26px;display:flex;flex-direction:column;gap:8px;}
+.pg-onb-detalle .pg-fila{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.pg-onb-detalle .pg-lab{margin-bottom:4px;}
 
 @media(prefers-reduced-motion:reduce){.pg *{transition:none!important;animation:none!important;}}
 </style>
@@ -418,6 +426,7 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
         <div>
           <label class="pg-lab" id="lblRecFrecuencia" for="recFrecuencia">Frecuencia</label>
           <select id="recFrecuencia" class="pg-in">
+            <option value="semanal" id="optFrecSemanal"></option>
             <option value="mensual" id="optFrecMensual"></option>
             <option value="trimestral" id="optFrecTrimestral"></option>
             <option value="semestral" id="optFrecSemestral"></option>
@@ -431,8 +440,8 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
           <select id="recCategoria" class="pg-in"></select>
         </div>
         <div>
-          <label class="pg-lab" id="lblRecDia" for="recDia">Día del mes</label>
-          <input id="recDia" type="number" min="1" max="28" value="1" class="pg-in pg-in--num">
+          <label class="pg-lab" id="lblRecFecha" for="recFecha">Próximo pago</label>
+          <input id="recFecha" type="date" class="pg-in pg-in--num">
         </div>
       </div>
       <button class="pg-btn" id="guardarRecurrente" type="button"></button>
@@ -446,7 +455,8 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
     <div class="pg-modal pg-modal--ancho">
       <h3 id="tituloOnboarding">¿Tienes pagos o ingresos que se repiten cada mes?</h3>
       <p id="txtOnboarding" style="font-size:12px;color:var(--tinta2);margin:0 0 14px"></p>
-      <div id="listaOnboarding" class="pg-catlista"></div>
+      <div id="listaOnboarding" class="pg-onb-lista"></div>
+      <button class="pg-link" id="anadirOnbPersonalizado" type="button" style="margin:4px 0 14px"></button>
       <button class="pg-btn" id="guardarOnboarding" type="button"></button>
       <button class="pg-link" id="omitirOnboarding" type="button" style="margin-top:12px"></button>
     </div>
@@ -532,16 +542,19 @@ var I18N = {
     "btn.omitir":"Ahora no",
     "titulo.recurrentesModal":"Pagos recurrentes",
     "lbl.recConcepto":"Concepto","lbl.recImporte":"Importe (€)","lbl.recTipo":"Tipo",
-    "lbl.recFrecuencia":"Frecuencia","lbl.recCategoria":"Categoría","lbl.recDia":"Día del mes",
+    "lbl.recFrecuencia":"Frecuencia","lbl.recCategoria":"Categoría","lbl.recFecha":"Próximo pago",
     "rec.gasto":"Gasto","rec.ingreso":"Ingreso",
-    "frec.mensual":"Mensual","frec.trimestral":"Trimestral","frec.semestral":"Semestral","frec.anual":"Anual",
-    "rec.diaTpl":"día {{n}}",
+    "frec.semanal":"Semanal","frec.mensual":"Mensual","frec.trimestral":"Trimestral","frec.semestral":"Semestral","frec.anual":"Anual",
+    "rec.proximoTpl":"próximo {{fecha}}",
     "rec.borrarAria":"Eliminar pago recurrente {{nombre}}",
     "rec.confirmarBorrar":"¿Eliminar el pago recurrente \"{{nombre}}\"? Dejará de generarse en los próximos meses (los que ya se generaron no se borran).",
     "rec.vacio":"No tienes pagos ni ingresos recurrentes configurados todavía.",
     "rec.tituloNuevo":"Añadir nuevo",
     "rec.tituloEditar":"Editar pago recurrente",
     "rec.errorConcepto":"Escribe un concepto.",
+    "rec.errorFecha":"Elige la fecha del próximo pago.",
+    "btn.anadirOtro":"+ Añadir otro pago",
+    "onb.personalizado":"Nuevo pago personalizado",
     "titulo.onboarding":"¿Tienes pagos o ingresos que se repiten cada mes?",
     "txt.onboarding":"Márcalos y ponles un importe para que se añadan solos cada vez que llega su mes. Puedes cambiarlos luego desde \"Pagos recurrentes\".",
     "preset.nomina":"Nómina","preset.alquiler":"Alquiler / Hipoteca","preset.gimnasio":"Gimnasio",
@@ -618,16 +631,19 @@ var I18N = {
     "btn.omitir":"Not now",
     "titulo.recurrentesModal":"Recurring payments",
     "lbl.recConcepto":"Description","lbl.recImporte":"Amount (€)","lbl.recTipo":"Type",
-    "lbl.recFrecuencia":"Frequency","lbl.recCategoria":"Category","lbl.recDia":"Day of month",
+    "lbl.recFrecuencia":"Frequency","lbl.recCategoria":"Category","lbl.recFecha":"Next payment",
     "rec.gasto":"Expense","rec.ingreso":"Income",
-    "frec.mensual":"Monthly","frec.trimestral":"Quarterly","frec.semestral":"Twice a year","frec.anual":"Yearly",
-    "rec.diaTpl":"day {{n}}",
+    "frec.semanal":"Weekly","frec.mensual":"Monthly","frec.trimestral":"Quarterly","frec.semestral":"Twice a year","frec.anual":"Yearly",
+    "rec.proximoTpl":"next {{fecha}}",
     "rec.borrarAria":"Delete recurring payment {{nombre}}",
     "rec.confirmarBorrar":"Delete the recurring payment \"{{nombre}}\"? It will stop being generated in future months (past months already generated stay as they are).",
     "rec.vacio":"You don't have any recurring payments or income set up yet.",
     "rec.tituloNuevo":"Add new",
     "rec.tituloEditar":"Edit recurring payment",
     "rec.errorConcepto":"Enter a description.",
+    "rec.errorFecha":"Pick the date of the next payment.",
+    "btn.anadirOtro":"+ Add another payment",
+    "onb.personalizado":"New custom payment",
     "titulo.onboarding":"Do you have payments or income that repeat every month?",
     "txt.onboarding":"Check the ones that apply and set an amount so they get added automatically each time their month comes around. You can change them later from \"Recurring payments\".",
     "preset.nomina":"Salary","preset.alquiler":"Rent / Mortgage","preset.gimnasio":"Gym",
@@ -844,7 +860,7 @@ function estadoVacio(){
   return {
     gastos:[], presupuestos:{}, ingresos:{}, meses:[mesDe(hoyISO())],
     categoriasPersonalizadas:[], categoriasEliminadas:[],
-    recurrentes:[], recurrentesGenerados:{}
+    recurrentes:[]
   };
 }
 function cargarEstado(){
@@ -858,8 +874,7 @@ function cargarEstado(){
           gastos:d.gastos, presupuestos:d.presupuestos||{}, ingresos:d.ingresos||{}, meses:mesesGuardados,
           categoriasPersonalizadas: Array.isArray(d.categoriasPersonalizadas) ? d.categoriasPersonalizadas : [],
           categoriasEliminadas: Array.isArray(d.categoriasEliminadas) ? d.categoriasEliminadas : [],
-          recurrentes: Array.isArray(d.recurrentes) ? d.recurrentes : [],
-          recurrentesGenerados: (d.recurrentesGenerados && typeof d.recurrentesGenerados==="object") ? d.recurrentesGenerados : {}
+          recurrentes: Array.isArray(d.recurrentes) ? d.recurrentes : []
         };
         var meses=mesesGuardados.slice().sort();
         mes = (meses.length && meses.indexOf(mesDe(hoyISO()))===-1) ? meses[meses.length-1] : mesDe(hoyISO());
@@ -932,55 +947,57 @@ function eliminarCategoria(id){
 }
 
 /* ---------- pagos e ingresos recurrentes ---------- */
-var FRECUENCIAS=["mensual","trimestral","semestral","anual"];
+var FRECUENCIAS=["semanal","mensual","trimestral","semestral","anual"];
 function nuevoIdRecurrente(){ return "r-"+Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
-function mesesEntre(m1,m2){
-  var a1=+m1.slice(0,4), mo1=+m1.slice(5,7);
-  var a2=+m2.slice(0,4), mo2=+m2.slice(5,7);
-  return (a2-a1)*12+(mo2-mo1);
+/* suma n meses a una fecha completa (no solo a un mes), ajustando el día si el mes destino es más corto */
+function sumarMesesAFecha(fechaISO,n){
+  var a=+fechaISO.slice(0,4), mo=+fechaISO.slice(5,7)-1+n, d=+fechaISO.slice(8,10);
+  a+=Math.floor(mo/12); mo=((mo%12)+12)%12;
+  var ym=a+"-"+p2(mo+1);
+  return ym+"-"+p2(Math.min(d,diasDelMes(ym)));
 }
-function debeGenerarse(rec,m){
-  var offset=mesesEntre(rec.mesInicio,m);
-  if(offset<0) return false;
-  if(rec.frecuencia==="mensual") return true;
-  if(rec.frecuencia==="trimestral") return offset%3===0;
-  if(rec.frecuencia==="semestral") return offset%6===0;
-  if(rec.frecuencia==="anual") return offset%12===0;
-  return false;
+function siguienteFecha(fechaISO,frecuencia){
+  if(frecuencia==="semanal"){
+    var d=new Date(fechaISO+"T00:00:00");
+    d.setDate(d.getDate()+7);
+    return d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate());
+  }
+  var pasos = frecuencia==="trimestral"?3 : frecuencia==="semestral"?6 : frecuencia==="anual"?12 : 1;
+  return sumarMesesAFecha(fechaISO,pasos);
 }
-/* genera los gastos/ingresos recurrentes pendientes para un mes dado (evita duplicar si ya se generaron) */
+/* genera todas las ocurrencias pendientes de cada recurrente hasta el final del mes dado,
+   avanzando su cursor "proximaFecha" — es idempotente, se puede llamar tantas veces como haga falta */
 function generarRecurrentesParaMes(m){
   if(!estado.recurrentes || !estado.recurrentes.length) return;
-  estado.recurrentesGenerados = estado.recurrentesGenerados || {};
-  var yaGenerados = estado.recurrentesGenerados[m] || [];
+  var finMes=m+"-"+p2(diasDelMes(m));
   var cambios=false;
   estado.recurrentes.forEach(function(rec){
-    if(!rec.activo) return;
-    if(yaGenerados.indexOf(rec.id)!==-1) return;
-    if(!debeGenerarse(rec,m)) return;
-    var dia=Math.min(rec.dia||1, diasDelMes(m));
-    var fecha=m+"-"+p2(dia);
-    if(rec.tipo==="ingreso"){
-      estado.ingresos[m]=(estado.ingresos[m]||0)+rec.importe;
-    }else{
-      estado.gastos.push({
-        id:"g-"+Date.now().toString(36)+Math.random().toString(36).slice(2,7),
-        concepto:rec.concepto, importe:rec.importe, categoria:rec.categoria||"otros",
-        fecha:fecha, recurrenteId:rec.id
-      });
+    if(!rec.activo || !rec.proximaFecha) return;
+    var guard=0;
+    while(rec.proximaFecha<=finMes && guard<120){
+      guard++;
+      var mesOcurrencia=mesDe(rec.proximaFecha);
+      if(rec.tipo==="ingreso"){
+        estado.ingresos[mesOcurrencia]=(estado.ingresos[mesOcurrencia]||0)+rec.importe;
+      }else{
+        estado.gastos.push({
+          id:"g-"+Date.now().toString(36)+Math.random().toString(36).slice(2,7),
+          concepto:rec.concepto, importe:rec.importe, categoria:rec.categoria||"otros",
+          fecha:rec.proximaFecha, recurrenteId:rec.id
+        });
+      }
+      cambios=true;
+      rec.proximaFecha=siguienteFecha(rec.proximaFecha,rec.frecuencia);
     }
-    yaGenerados.push(rec.id);
-    cambios=true;
   });
-  estado.recurrentesGenerados[m]=yaGenerados;
   if(cambios) guardarEstado();
 }
 function agregarRecurrente(datos){
   estado.recurrentes = estado.recurrentes||[];
   estado.recurrentes.push({
     id:nuevoIdRecurrente(), tipo:datos.tipo, concepto:datos.concepto, importe:datos.importe,
-    categoria:datos.categoria||"otros", frecuencia:datos.frecuencia, dia:datos.dia||1,
-    mesInicio:datos.mesInicio||mes, activo:true
+    categoria:datos.categoria||"otros", frecuencia:datos.frecuencia,
+    proximaFecha:datos.proximaFecha||hoyISO(), activo:true
   });
   guardarEstado();
   generarRecurrentesParaMes(mes);
@@ -989,14 +1006,13 @@ function actualizarRecurrente(id,datos){
   var rec=(estado.recurrentes||[]).filter(function(r){ return r.id===id; })[0];
   if(!rec) return;
   rec.tipo=datos.tipo; rec.concepto=datos.concepto; rec.importe=datos.importe;
-  rec.categoria=datos.categoria||"otros"; rec.frecuencia=datos.frecuencia; rec.dia=datos.dia||1;
+  rec.categoria=datos.categoria||"otros"; rec.frecuencia=datos.frecuencia;
+  if(datos.proximaFecha) rec.proximaFecha=datos.proximaFecha;
   guardarEstado();
+  generarRecurrentesParaMes(mes);
 }
 function eliminarRecurrente(id){
   estado.recurrentes = (estado.recurrentes||[]).filter(function(r){ return r.id!==id; });
-  Object.keys(estado.recurrentesGenerados||{}).forEach(function(m){
-    estado.recurrentesGenerados[m] = estado.recurrentesGenerados[m].filter(function(x){ return x!==id; });
-  });
   guardarEstado();
 }
 
@@ -1420,7 +1436,7 @@ function renderListaRecurrentes(){
     return '<div class="pg-rec-fila" data-recurrente="'+r.id+'">'+
       '<div class="pg-rec-info">'+
         '<div class="pg-rec-concepto">'+esc(r.concepto)+'</div>'+
-        '<div class="pg-rec-detalle">'+catNom+textoFrecuencia(r.frecuencia)+' · '+t("rec.diaTpl",{n:r.dia})+'</div>'+
+        '<div class="pg-rec-detalle">'+catNom+textoFrecuencia(r.frecuencia)+' · '+t("rec.proximoTpl",{fecha:diaCorto(r.proximaFecha)})+'</div>'+
       '</div>'+
       '<div class="pg-rec-importe'+(r.tipo==="ingreso"?" pg-rec-importe--ingreso":"")+'">'+
         (r.tipo==="ingreso"?"+":"−")+eur.format(r.importe)+'</div>'+
@@ -1439,7 +1455,7 @@ function actualizarVisibilidadCategoriaRecurrente(){
 }
 function limpiarFormRecurrente(){
   recurrenteEditandoId=null;
-  $("recConcepto").value=""; $("recImporte").value=""; $("recDia").value="1";
+  $("recConcepto").value=""; $("recImporte").value=""; $("recFecha").value=hoyISO();
   $("recTipo").value="gasto"; $("recFrecuencia").value="mensual";
   actualizarVisibilidadCategoriaRecurrente();
   $("errorRecurrente").textContent="";
@@ -1454,7 +1470,7 @@ function cargarFormRecurrente(rec){
   $("recTipo").value=rec.tipo;
   $("recFrecuencia").value=rec.frecuencia;
   $("recCategoria").value=rec.categoria||"otros";
-  $("recDia").value=rec.dia||1;
+  $("recFecha").value=rec.proximaFecha||hoyISO();
   actualizarVisibilidadCategoriaRecurrente();
   $("errorRecurrente").textContent="";
   $("guardarRecurrente").textContent=t("btn.guardarCambios");
@@ -1472,15 +1488,45 @@ var PRESETS_ONBOARDING=[
   {id:"seguro", tipo:"gasto", frecuencia:"anual", categoria:"servicios"},
   {id:"ibi", tipo:"gasto", frecuencia:"anual", categoria:"vivienda"}
 ];
+var contadorOnbPersonalizado=0;
+/* cada fila del onboarding es totalmente editable: nombre, tipo, importe, frecuencia, categoría y fecha */
+function filaOnboardingHTML(id,o){
+  var opcionesTipo = '<option value="gasto"'+(o.tipo==="gasto"?" selected":"")+'>'+t("rec.gasto")+'</option>'+
+    '<option value="ingreso"'+(o.tipo==="ingreso"?" selected":"")+'>'+t("rec.ingreso")+'</option>';
+  var opcionesFrecuencia = FRECUENCIAS.map(function(f){
+    return '<option value="'+f+'"'+(f===o.frecuencia?" selected":"")+'>'+textoFrecuencia(f)+'</option>';
+  }).join("");
+  var opcionesCategoria = categoriasActuales().map(function(c){
+    return '<option value="'+c.id+'"'+(c.id===o.categoria?" selected":"")+'>'+esc(c.nombre)+'</option>';
+  }).join("");
+  return '<div class="pg-onb-fila" data-onb="'+id+'">'+
+    '<div class="pg-onb-cabecera">'+
+      '<input type="checkbox" data-onb-check="'+id+'"'+(o.marcado?" checked":"")+'>'+
+      '<input type="text" class="pg-onb-nombre" data-onb-nombre="'+id+'" value="'+esc(o.nombre)+'" maxlength="60">'+
+      '<button class="pg-x" type="button" data-onb-quitar="'+id+'">×</button>'+
+    '</div>'+
+    '<div class="pg-onb-detalle" data-onb-detalle="'+id+'"'+(o.marcado?"":" hidden")+'>'+
+      '<div class="pg-fila">'+
+        '<div><label class="pg-lab">'+t("lbl.recImporte")+'</label><input type="text" inputmode="decimal" class="pg-in pg-in--num" data-onb-importe="'+id+'" value="'+(o.importe?decimalATexto(o.importe):"")+'" placeholder="'+t("placeholder.decimal")+'"></div>'+
+        '<div><label class="pg-lab">'+t("lbl.recTipo")+'</label><select class="pg-in" data-onb-tipo="'+id+'">'+opcionesTipo+'</select></div>'+
+      '</div>'+
+      '<div class="pg-fila">'+
+        '<div><label class="pg-lab">'+t("lbl.recFrecuencia")+'</label><select class="pg-in" data-onb-frecuencia="'+id+'">'+opcionesFrecuencia+'</select></div>'+
+        '<div><label class="pg-lab">'+t("lbl.recFecha")+'</label><input type="date" class="pg-in pg-in--num" data-onb-fecha="'+id+'" value="'+(o.fecha||hoyISO())+'"></div>'+
+      '</div>'+
+      '<div data-onb-catwrap="'+id+'"'+(o.tipo==="ingreso"?' style="display:none"':'')+'>'+
+        '<label class="pg-lab">'+t("lbl.recCategoria")+'</label><select class="pg-in" data-onb-categoria="'+id+'">'+opcionesCategoria+'</select>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
 function mostrarOnboardingRecurrentes(){
+  contadorOnbPersonalizado=0;
   $("listaOnboarding").innerHTML = PRESETS_ONBOARDING.map(function(p){
-    var etiquetaTipo = p.tipo==="ingreso" ? t("rec.ingreso") : t("rec.gasto");
-    return '<div class="pg-rec-fila">'+
-      '<input type="checkbox" data-preset="'+p.id+'">'+
-      '<div class="pg-rec-info"><div class="pg-rec-concepto">'+t("preset."+p.id)+'</div>'+
-      '<div class="pg-rec-detalle">'+etiquetaTipo+' · '+textoFrecuencia(p.frecuencia)+'</div></div>'+
-      '<input type="text" inputmode="decimal" class="pg-preset-importe" placeholder="'+t("placeholder.decimal")+'" data-preset-importe="'+p.id+'" hidden>'+
-      '</div>';
+    return filaOnboardingHTML(p.id,{
+      marcado:false, nombre:t("preset."+p.id), tipo:p.tipo, frecuencia:p.frecuencia,
+      categoria:p.categoria||"otros", importe:null, fecha:hoyISO()
+    });
   }).join("");
   abrirModal("overlayOnboarding");
 }
@@ -1507,7 +1553,8 @@ function detectarCiclicos(gastosNuevos){
     }
     var media=gaps.reduce(function(a,b){ return a+b; },0)/gaps.length;
     var frecuencia=null;
-    if(media>=25 && media<=35) frecuencia="mensual";
+    if(media>=5 && media<=9) frecuencia="semanal";
+    else if(media>=25 && media<=35) frecuencia="mensual";
     else if(media>=80 && media<=100) frecuencia="trimestral";
     else if(media>=170 && media<=190) frecuencia="semestral";
     else if(media>=350 && media<=380) frecuencia="anual";
@@ -1515,7 +1562,7 @@ function detectarCiclicos(gastosNuevos){
     var ultimo=arr[arr.length-1];
     candidatos.push({
       concepto:ultimo.concepto, importe:ultimo.importe, categoria:ultimo.categoria,
-      frecuencia:frecuencia, dia:+ultimo.fecha.slice(8,10), mesInicio:mesDe(arr[0].fecha),
+      frecuencia:frecuencia, proximaFecha:siguienteFecha(ultimo.fecha,frecuencia),
       ocurrencias:arr.length
     });
   });
@@ -1679,16 +1726,18 @@ function aplicarIdioma(){
   $("optRecGasto").textContent = t("rec.gasto");
   $("optRecIngreso").textContent = t("rec.ingreso");
   $("lblRecFrecuencia").textContent = t("lbl.recFrecuencia");
+  $("optFrecSemanal").textContent = t("frec.semanal");
   $("optFrecMensual").textContent = t("frec.mensual");
   $("optFrecTrimestral").textContent = t("frec.trimestral");
   $("optFrecSemestral").textContent = t("frec.semestral");
   $("optFrecAnual").textContent = t("frec.anual");
   $("lblRecCategoria").textContent = t("lbl.recCategoria");
-  $("lblRecDia").textContent = t("lbl.recDia");
+  $("lblRecFecha").textContent = t("lbl.recFecha");
   $("cancelarEdicionRecurrente").textContent = t("btn.cancelar");
   $("cerrarRecurrentes").textContent = t("btn.cerrar");
   $("tituloOnboarding").textContent = t("titulo.onboarding");
   $("txtOnboarding").textContent = t("txt.onboarding");
+  $("anadirOnbPersonalizado").textContent = t("btn.anadirOtro");
   $("guardarOnboarding").textContent = t("btn.guardarCambios");
   $("omitirOnboarding").textContent = t("btn.omitir");
   $("tituloCiclicos").textContent = t("titulo.ciclicos");
@@ -1828,8 +1877,7 @@ function inicializarEventos(){
           gastos:d.gastos, presupuestos:d.presupuestos||{}, ingresos:d.ingresos||{}, meses:mesesRestaurados,
           categoriasPersonalizadas: Array.isArray(d.categoriasPersonalizadas) ? d.categoriasPersonalizadas : [],
           categoriasEliminadas: Array.isArray(d.categoriasEliminadas) ? d.categoriasEliminadas : [],
-          recurrentes: Array.isArray(d.recurrentes) ? d.recurrentes : [],
-          recurrentesGenerados: (d.recurrentesGenerados && typeof d.recurrentesGenerados==="object") ? d.recurrentesGenerados : {}
+          recurrentes: Array.isArray(d.recurrentes) ? d.recurrentes : []
         };
         mes = mesesRestaurados.length ? mesesRestaurados.slice().sort()[mesesRestaurados.length-1] : mes;
         categoria = categoriaValidaPorDefecto();
@@ -2025,17 +2073,17 @@ function inicializarEventos(){
   $("guardarRecurrente").addEventListener("click", function(){
     var concepto=$("recConcepto").value.trim();
     var n=aNumero($("recImporte").value);
-    var dia=Math.max(1, Math.min(28, +$("recDia").value||1));
+    var fecha=$("recFecha").value;
     if(!concepto){ $("errorRecurrente").textContent=t("rec.errorConcepto"); return; }
     if(!isFinite(n) || n<=0){ $("errorRecurrente").textContent=t("error.importe"); return; }
+    if(!fecha){ $("errorRecurrente").textContent=t("rec.errorFecha"); return; }
     var datos={
       tipo:$("recTipo").value, concepto:concepto, importe:Math.round(n*100)/100,
-      categoria:$("recCategoria").value, frecuencia:$("recFrecuencia").value, dia:dia
+      categoria:$("recCategoria").value, frecuencia:$("recFrecuencia").value, proximaFecha:fecha
     };
     if(recurrenteEditandoId){
       actualizarRecurrente(recurrenteEditandoId, datos);
     }else{
-      datos.mesInicio=mes;
       agregarRecurrente(datos);
     }
     renderListaRecurrentes();
@@ -2045,21 +2093,50 @@ function inicializarEventos(){
 
   /* onboarding de recurrentes al crear perfil */
   $("listaOnboarding").addEventListener("change", function(e){
-    var chk=e.target.closest("[data-preset]"); if(!chk) return;
-    var inp=document.querySelector('[data-preset-importe="'+chk.getAttribute("data-preset")+'"]');
-    inp.hidden=!chk.checked;
-    if(chk.checked) inp.focus();
+    var chk=e.target.closest("[data-onb-check]");
+    if(chk){
+      var det=document.querySelector('[data-onb-detalle="'+chk.getAttribute("data-onb-check")+'"]');
+      if(det) det.hidden=!chk.checked;
+      return;
+    }
+    var tipoSel=e.target.closest("[data-onb-tipo]");
+    if(tipoSel){
+      var wrap=document.querySelector('[data-onb-catwrap="'+tipoSel.getAttribute("data-onb-tipo")+'"]');
+      if(wrap) wrap.style.display = tipoSel.value==="ingreso" ? "none" : "";
+    }
+  });
+  $("listaOnboarding").addEventListener("click", function(e){
+    var quitar=e.target.closest("[data-onb-quitar]"); if(!quitar) return;
+    var fila=e.target.closest("[data-onb]");
+    if(fila) fila.remove();
+  });
+  $("anadirOnbPersonalizado").addEventListener("click", function(){
+    contadorOnbPersonalizado++;
+    var envoltorio=document.createElement("div");
+    envoltorio.innerHTML=filaOnboardingHTML("custom-"+contadorOnbPersonalizado,{
+      marcado:true, nombre:t("onb.personalizado"), tipo:"gasto", frecuencia:"mensual",
+      categoria:"otros", importe:null, fecha:hoyISO()
+    });
+    var nuevaFila=envoltorio.firstChild;
+    $("listaOnboarding").appendChild(nuevaFila);
+    nuevaFila.querySelector(".pg-onb-nombre").focus();
+    nuevaFila.querySelector(".pg-onb-nombre").select();
   });
   $("guardarOnboarding").addEventListener("click", function(){
-    PRESETS_ONBOARDING.forEach(function(p){
-      var chk=document.querySelector('[data-preset="'+p.id+'"]');
+    Array.from($("listaOnboarding").querySelectorAll("[data-onb]")).forEach(function(fila){
+      var id=fila.getAttribute("data-onb");
+      var chk=fila.querySelector('[data-onb-check="'+id+'"]');
       if(!chk || !chk.checked) return;
-      var inp=document.querySelector('[data-preset-importe="'+p.id+'"]');
-      var n=aNumero(inp.value);
-      if(!isFinite(n) || n<=0) return;
+      var nombre=fila.querySelector('[data-onb-nombre="'+id+'"]').value.trim();
+      var n=aNumero(fila.querySelector('[data-onb-importe="'+id+'"]').value);
+      if(!nombre || !isFinite(n) || n<=0) return;
       agregarRecurrente({
-        tipo:p.tipo, concepto:t("preset."+p.id), importe:Math.round(n*100)/100,
-        categoria:p.categoria, frecuencia:p.frecuencia, dia:1, mesInicio:mes
+        tipo: fila.querySelector('[data-onb-tipo="'+id+'"]').value,
+        concepto: nombre,
+        importe: Math.round(n*100)/100,
+        categoria: fila.querySelector('[data-onb-categoria="'+id+'"]').value,
+        frecuencia: fila.querySelector('[data-onb-frecuencia="'+id+'"]').value,
+        proximaFecha: fila.querySelector('[data-onb-fecha="'+id+'"]').value || hoyISO()
       });
     });
     cerrarModal("overlayOnboarding");
@@ -2076,7 +2153,7 @@ function inicializarEventos(){
     seleccionados.forEach(function(c){
       agregarRecurrente({
         tipo:"gasto", concepto:c.concepto, importe:c.importe, categoria:c.categoria,
-        frecuencia:c.frecuencia, dia:c.dia, mesInicio:c.mesInicio
+        frecuencia:c.frecuencia, proximaFecha:c.proximaFecha
       });
     });
     cerrarModal("overlayCiclicos");
