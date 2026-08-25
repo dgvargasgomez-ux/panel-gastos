@@ -89,9 +89,9 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
 .pg-seg--resto{background:repeating-linear-gradient(135deg,transparent 0 5px,rgba(22,33,28,.11) 5px 6px);}
 .pg-pie{display:flex;justify-content:space-between;gap:12px;margin-top:8px;font-size:12px;color:var(--tinta2);}
 
-.pg-grid-superior{display:grid;grid-template-columns:1fr;gap:22px;margin-top:30px;}
+.pg-grid-superior{display:grid;grid-template-columns:1fr;gap:22px;margin-top:30px;align-items:start;}
 @media(min-width:760px){.pg-grid-superior{grid-template-columns:1fr 1fr;}}
-.pg-grid-inferior{display:grid;grid-template-columns:1fr;gap:22px;margin-top:22px;}
+.pg-grid-inferior{display:grid;grid-template-columns:1fr;gap:22px;margin-top:22px;align-items:start;}
 @media(min-width:920px){.pg-grid-inferior{grid-template-columns:1fr 1fr;gap:34px;}}
 
 .pg-card{background:var(--sup);border:1px solid var(--linea);border-radius:3px;padding:18px;}
@@ -136,7 +136,7 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
 .pg-cat-mov{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--tinta2);}
 .pg-cat-mov span:last-child{font-family:'IBM Plex Mono',ui-monospace,monospace;color:var(--tinta);white-space:nowrap;}
 
-.pg-mov{display:grid;grid-template-columns:auto 1fr auto auto auto;align-items:center;gap:10px;
+.pg-mov{display:grid;grid-template-columns:auto 1fr auto auto auto auto;align-items:center;gap:10px;
   padding:8px 0;border-bottom:1px solid var(--linea);}
 .pg-mov:last-child{border-bottom:none;}
 .pg-fech{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;color:var(--tinta2);white-space:nowrap;}
@@ -144,6 +144,15 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
 .pg-imp{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap;}
 .pg-x{background:none;border:none;color:#A6ADA3;font-size:16px;line-height:1;cursor:pointer;padding:2px 4px;}
 .pg-x:hover{color:#B4462F;}
+.pg-mov-editar{background:none;border:none;color:#A6ADA3;font-size:13px;line-height:1;cursor:pointer;padding:2px 4px;}
+.pg-mov-editar:hover{color:var(--pino);}
+.pg-mov--editando{display:flex;flex-direction:column;gap:8px;padding:10px 0;border-bottom:1px solid var(--linea);}
+.pg-mov-editfila{display:flex;gap:8px;}
+.pg-mov-editfila>*{flex:1;min-width:0;}
+.pg-mov-editfila input{font:inherit;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;
+  border:1px solid var(--linea);border-radius:2px;padding:6px 8px;box-sizing:border-box;}
+.pg-mov-editfila .pg-btn--sec{flex:1;}
+.pg-mov-editfila .pg-link{flex:none;}
 .pg-scroll{max-height:290px;overflow-y:auto;}
 .pg-mov-grupo + .pg-mov-grupo{margin-top:16px;}
 .pg-mov-grupo-tit{font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
@@ -593,7 +602,7 @@ var I18N = {
     "catCount.tpl":"{{n}} categorías con gasto",
     "movs.vacioTpl":"Todavía no hay nada apuntado en {{mes}}. Empieza por el gasto más reciente.",
     "movs.yaDescontado":"Ya descontado ({{n}})","movs.pendiente":"Pendiente este mes ({{n}})",
-    "mov.borrarAria":"Borrar {{concepto}}",
+    "mov.borrarAria":"Borrar {{concepto}}","mov.editarAria":"Editar {{concepto}}",
     "ahorro.ingresoPresupuesto":"Ingreso − presupuesto","ahorro.presupuestoSinGastar":"Presupuesto sin gastar",
     "ahorro.aporteMes":"Aporte al bote este mes","ahorro.boteAcumulado":"Bote acumulado",
     "ahorro.vacio":"Añade tus ingresos del mes para empezar a generar el bote de ahorro.",
@@ -628,7 +637,7 @@ var I18N = {
     "preset.seguro":"Seguro","preset.ibi":"IBI",
     "titulo.ciclicos":"Hemos detectado pagos que se repiten",
     "ciclico.txt":"Al importar hemos visto {{n}} pago(s) con un patrón regular. Márcalos para que a partir de ahora se añadan solos cada mes que toque.",
-    "ciclico.vecesTpl":"visto {{n}} veces",
+    "ciclico.vecesTpl":"visto {{n}} veces","ciclico.variableTpl":"importe variable, entre {{min}} y {{max}}",
     "btn.guardarCiclicos":"Programar los marcados"
   },
   en: {
@@ -688,7 +697,7 @@ var I18N = {
     "catCount.tpl":"{{n}} categories with spending",
     "movs.vacioTpl":"Nothing logged yet in {{mes}}. Start with your most recent expense.",
     "movs.yaDescontado":"Already charged ({{n}})","movs.pendiente":"Pending this month ({{n}})",
-    "mov.borrarAria":"Delete {{concepto}}",
+    "mov.borrarAria":"Delete {{concepto}}","mov.editarAria":"Edit {{concepto}}",
     "ahorro.ingresoPresupuesto":"Income − budget","ahorro.presupuestoSinGastar":"Unspent budget",
     "ahorro.aporteMes":"Contribution to the pot this month","ahorro.boteAcumulado":"Total saved",
     "ahorro.vacio":"Add your income for the month to start building your savings pot.",
@@ -723,7 +732,7 @@ var I18N = {
     "preset.seguro":"Insurance","preset.ibi":"Property tax",
     "titulo.ciclicos":"We've found some recurring payments",
     "ciclico.txt":"While importing we spotted {{n}} payment(s) with a regular pattern. Check the ones you want to auto-add every month from now on.",
-    "ciclico.vecesTpl":"seen {{n}} times",
+    "ciclico.vecesTpl":"seen {{n}} times","ciclico.variableTpl":"variable amount, between {{min}} and {{max}}",
     "btn.guardarCiclicos":"Schedule the checked ones"
   }
 };
@@ -877,6 +886,7 @@ var estado={gastos:[],presupuestos:{},ingresos:{},meses:[],categoriasPersonaliza
 var mes=mesDe(hoyISO());
 var categoria="alimentacion";
 var categoriaExpandida=null;
+var movEditando=null;
 var activa=null;
 var perfilActivoId=null;
 
@@ -1245,11 +1255,23 @@ function render(){
   $("vaciar").textContent = t("btn.vaciarMes",{mes:nombreMesTexto(mes).split(" ")[0]});
   var filaMov = function(g){
     var c = categoriaPorId(g.categoria);
+    if(g.id===movEditando){
+      return '<div class="pg-mov--editando" data-mov="'+g.id+'">'+
+        '<div class="pg-mov-editfila">'+
+          '<input type="date" data-campoedit="fecha" value="'+g.fecha+'">'+
+          '<input type="text" inputmode="decimal" data-campoedit="importe" value="'+decimalATexto(g.importe)+'">'+
+        '</div>'+
+        '<div class="pg-mov-editfila">'+
+          '<button class="pg-btn pg-btn--sec" type="button" data-guardarmov="'+g.id+'">'+t("btn.guardarCambios")+'</button>'+
+          '<button class="pg-link" type="button" data-cancelarmov="'+g.id+'">'+t("btn.cancelar")+'</button>'+
+        '</div></div>';
+    }
     return '<div class="pg-mov" data-cat="'+g.categoria+'">'+
       '<span class="pg-fech">'+diaCorto(g.fecha)+'</span>'+
       '<span class="pg-conc" title="'+esc(g.concepto)+'">'+esc(g.concepto)+'</span>'+
       '<span class="pg-punto" style="background:'+c.color+'" title="'+esc(c.nombre)+'"></span>'+
       '<span class="pg-imp">'+eur.format(g.importe)+'</span>'+
+      '<button class="pg-mov-editar" type="button" data-editarmov="'+g.id+'" aria-label="'+t("mov.editarAria",{concepto:esc(g.concepto)})+'">✎</button>'+
       '<button class="pg-x" data-del="'+g.id+'" aria-label="'+t("mov.borrarAria",{concepto:esc(g.concepto)})+'">×</button></div>';
   };
   var htmlMovs;
@@ -1532,7 +1554,7 @@ function analizarTexto(txt){
       if(!fecha || !info) continue;
       filas.push({
         fecha:fecha, concepto:(idxConcepto>-1?f[idxConcepto]:"").slice(0,80)||t("import.sinConcepto"),
-        importe:info.valor, incluir:info.esGasto, categoria:"otros", transferencia:false
+        importe:info.valor, incluir:info.esGasto, esGasto:info.esGasto, categoria:"otros", transferencia:false
       });
     }
   }else{
@@ -1550,7 +1572,7 @@ function analizarTexto(txt){
       var concepto=resto.replace(importeTxt,"").replace(/[€;,\t]+/g," ").trim().replace(/\s{2,}/g," ");
       filas.push({
         fecha:fecha, concepto:concepto.slice(0,80)||t("import.sinConcepto"),
-        importe:info.valor, incluir:info.esGasto, categoria:"otros", transferencia:false
+        importe:info.valor, incluir:info.esGasto, esGasto:info.esGasto, categoria:"otros", transferencia:false
       });
     });
   }
@@ -1763,10 +1785,14 @@ function mostrarOnboardingRecurrentes(){
 var ciclicosDetectados=[];
 /* agrupa por concepto+importe; si aparecen en 2+ meses distintos con un intervalo regular
    (~30/90/180/365 días), lo propone como recurrente */
-function detectarCiclicos(gastosNuevos){
+/* agrupa por concepto + si es gasto o ingreso (no exige el mismo importe exacto): admite variaciones
+   de hasta un 20% entre el importe más bajo y más alto del grupo, y sugiere la media como importe.
+   Recibe todas las filas analizadas del CSV/texto (estén marcadas para incluir o no), para poder
+   detectar también ingresos recurrentes (ej. nómina) aunque no se hayan guardado como gasto. */
+function detectarCiclicos(filas){
   var grupos={};
-  gastosNuevos.forEach(function(g){
-    var clave=g.concepto.trim().toLowerCase()+"|"+g.importe.toFixed(2);
+  filas.forEach(function(g){
+    var clave=g.concepto.trim().toLowerCase()+"|"+(g.esGasto?"gasto":"ingreso");
     (grupos[clave]=grupos[clave]||[]).push(g);
   });
   var candidatos=[];
@@ -1775,23 +1801,29 @@ function detectarCiclicos(gastosNuevos){
     if(arr.length<2) return;
     var mesesUnicos=[...new Set(arr.map(function(g){ return mesDe(g.fecha); }))];
     if(mesesUnicos.length<2) return;
+    var importes=arr.map(function(g){ return g.importe; });
+    var media=importes.reduce(function(a,b){ return a+b; },0)/importes.length;
+    var importeMin=Math.min.apply(null,importes), importeMax=Math.max.apply(null,importes);
+    if((importeMax-importeMin)/media>0.20) return;
     var gaps=[];
     for(var i=1;i<arr.length;i++){
       gaps.push(Math.round((new Date(arr[i].fecha).getTime()-new Date(arr[i-1].fecha).getTime())/86400000));
     }
-    var media=gaps.reduce(function(a,b){ return a+b; },0)/gaps.length;
+    var mediaGap=gaps.reduce(function(a,b){ return a+b; },0)/gaps.length;
     var frecuencia=null;
-    if(media>=5 && media<=9) frecuencia="semanal";
-    else if(media>=25 && media<=35) frecuencia="mensual";
-    else if(media>=80 && media<=100) frecuencia="trimestral";
-    else if(media>=170 && media<=190) frecuencia="semestral";
-    else if(media>=350 && media<=380) frecuencia="anual";
+    if(mediaGap>=5 && mediaGap<=9) frecuencia="semanal";
+    else if(mediaGap>=25 && mediaGap<=35) frecuencia="mensual";
+    else if(mediaGap>=80 && mediaGap<=100) frecuencia="trimestral";
+    else if(mediaGap>=170 && mediaGap<=190) frecuencia="semestral";
+    else if(mediaGap>=350 && mediaGap<=380) frecuencia="anual";
     if(!frecuencia) return;
     var ultimo=arr[arr.length-1];
     candidatos.push({
-      concepto:ultimo.concepto, importe:ultimo.importe, categoria:ultimo.categoria,
+      concepto:ultimo.concepto, importe:Math.round(media*100)/100, categoria:ultimo.categoria,
+      tipo: ultimo.esGasto ? "gasto" : "ingreso",
       frecuencia:frecuencia, proximaFecha:siguienteFecha(ultimo.fecha,frecuencia),
-      ocurrencias:arr.length
+      ocurrencias:arr.length, variable:importeMax!==importeMin,
+      importeMin:importeMin, importeMax:importeMax
     });
   });
   return candidatos;
@@ -1801,11 +1833,15 @@ function mostrarCiclicosDetectados(candidatos){
   if(!candidatos.length) return;
   $("txtCiclicos").textContent=t("ciclico.txt",{n:candidatos.length});
   $("listaCiclicos").innerHTML=candidatos.map(function(c,i){
+    var detalle = (c.tipo==="ingreso"?t("rec.ingreso"):t("rec.gasto"))+' · '+textoFrecuencia(c.frecuencia)+
+      ' · '+t("ciclico.vecesTpl",{n:c.ocurrencias})+
+      (c.variable ? ' · '+t("ciclico.variableTpl",{min:eur.format(c.importeMin),max:eur.format(c.importeMax)}) : '');
     return '<div class="pg-rec-fila">'+
       '<input type="checkbox" data-ciclico="'+i+'" checked>'+
       '<div class="pg-rec-info"><div class="pg-rec-concepto">'+esc(c.concepto)+'</div>'+
-      '<div class="pg-rec-detalle">'+textoFrecuencia(c.frecuencia)+' · '+t("ciclico.vecesTpl",{n:c.ocurrencias})+'</div></div>'+
-      '<div class="pg-rec-importe">'+eur.format(c.importe)+'</div>'+
+      '<div class="pg-rec-detalle">'+detalle+'</div></div>'+
+      '<input type="text" inputmode="decimal" class="pg-in pg-in--num" data-ciclico-importe="'+i+'" '+
+      'value="'+decimalATexto(c.importe)+'" style="width:88px;flex:none">'+
       '</div>';
   }).join("");
   abrirModal("overlayCiclicos");
@@ -2109,6 +2145,26 @@ function inicializarEventos(){
     render();
   });
 
+  /* editar importe/fecha de un movimiento ya guardado */
+  $("movs").addEventListener("click", function(e){
+    var editar=e.target.closest("[data-editarmov]");
+    if(editar){ movEditando=editar.getAttribute("data-editarmov"); render(); return; }
+    var cancelar=e.target.closest("[data-cancelarmov]");
+    if(cancelar){ movEditando=null; render(); return; }
+    var guardar=e.target.closest("[data-guardarmov]");
+    if(guardar){
+      var fila=guardar.closest("[data-mov]");
+      var id=fila.getAttribute("data-mov");
+      var fecha=fila.querySelector('[data-campoedit="fecha"]').value;
+      var n=aNumero(fila.querySelector('[data-campoedit="importe"]').value);
+      if(!fecha || !isFinite(n) || n<=0) return;
+      var g=estado.gastos.filter(function(x){ return x.id===id; })[0];
+      if(g){ g.fecha=fecha; g.importe=Math.round(n*100)/100; guardarEstado(); }
+      movEditando=null;
+      render();
+    }
+  });
+
   document.addEventListener("click", function(e){
     var btn=e.target.closest("[data-colapsar]"); if(!btn) return;
     var cuerpo=$(btn.getAttribute("data-colapsar")); if(!cuerpo) return;
@@ -2342,24 +2398,31 @@ function inicializarEventos(){
   $("confirmarImportar").addEventListener("click", function(){
     var incluidas = filasPendientes.filter(function(f){ return f.incluir; });
     var validas = incluidas.filter(function(f){ return f.fecha && isFinite(f.importe) && f.importe>0; });
-    if(!validas.length){ $("errorImportarModal").textContent=t("import.errorVacio"); return; }
-    var gastosNuevos = validas.map(function(f){
-      var g={
-        id: Date.now()+"-"+Math.random().toString(36).slice(2,7),
-        concepto: (f.concepto||"").trim() || t("import.sinConcepto"),
-        importe: Math.round(f.importe*100)/100,
-        categoria: f.categoria || "otros",
-        fecha: f.fecha
-      };
-      estado.gastos.push(g);
-      return g;
-    });
-    guardarEstado();
-    mes = validas[validas.length-1].fecha.slice(0,7);
+    /* la detección de patrones cíclicos mira TODAS las filas analizadas, no solo las marcadas para
+       guardar como gasto: así se detectan también ingresos recurrentes (ej. nómina) aunque no se
+       hayan incluido como movimiento */
+    var candidatosCiclicos = detectarCiclicos(filasPendientes.filter(function(f){ return !f.transferencia; }));
+    if(!validas.length && !candidatosCiclicos.length){
+      $("errorImportarModal").textContent=t("import.errorVacio");
+      return;
+    }
+    if(validas.length){
+      validas.forEach(function(f){
+        estado.gastos.push({
+          id: Date.now()+"-"+Math.random().toString(36).slice(2,7),
+          concepto: (f.concepto||"").trim() || t("import.sinConcepto"),
+          importe: Math.round(f.importe*100)/100,
+          categoria: f.categoria || "otros",
+          fecha: f.fecha
+        });
+      });
+      guardarEstado();
+      mes = validas[validas.length-1].fecha.slice(0,7);
+    }
     cerrarModal("overlayImportar");
     $("textoImportar").value="";
     render();
-    mostrarCiclicosDetectados(detectarCiclicos(gastosNuevos));
+    mostrarCiclicosDetectados(candidatosCiclicos);
   });
 
   /* pagos recurrentes */
@@ -2469,13 +2532,14 @@ function inicializarEventos(){
 
   /* pagos cíclicos detectados al importar */
   $("guardarCiclicos").addEventListener("click", function(){
-    var seleccionados = ciclicosDetectados.filter(function(c,i){
+    ciclicosDetectados.forEach(function(c,i){
       var chk=document.querySelector('[data-ciclico="'+i+'"]');
-      return chk && chk.checked;
-    });
-    seleccionados.forEach(function(c){
+      if(!chk || !chk.checked) return;
+      var inp=document.querySelector('[data-ciclico-importe="'+i+'"]');
+      var n=aNumero(inp.value);
+      var importe = (isFinite(n) && n>0) ? Math.round(n*100)/100 : c.importe;
       agregarRecurrente({
-        tipo:"gasto", concepto:c.concepto, importe:c.importe, categoria:c.categoria,
+        tipo:c.tipo, concepto:c.concepto, importe:importe, categoria:c.categoria,
         frecuencia:c.frecuencia, proximaFecha:c.proximaFecha
       });
     });
