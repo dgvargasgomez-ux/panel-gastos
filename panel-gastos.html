@@ -92,7 +92,6 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
 .pg-grid-superior{display:grid;grid-template-columns:1fr;gap:22px;margin-top:30px;align-items:start;}
 @media(min-width:760px){.pg-grid-superior{grid-template-columns:1fr 1fr;}}
 .pg-grid-inferior{display:grid;grid-template-columns:1fr;gap:22px;margin-top:22px;align-items:start;}
-@media(min-width:920px){.pg-grid-inferior{grid-template-columns:1fr 1fr;gap:34px;}}
 
 .pg-card{background:var(--sup);border:1px solid var(--linea);border-radius:3px;padding:18px;}
 .pg-colapsar{background:none;border:1px solid var(--linea);border-radius:50%;width:22px;height:22px;
@@ -184,6 +183,12 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
   font-family:'Bricolage Grotesque','Public Sans',sans-serif;flex:none;}
 .pg-user:hover .pg-avatar{filter:brightness(1.08);}
 .pg-avatar--grande{width:42px;height:42px;font-size:15px;}
+.pg-avatar--enorme{width:64px;height:64px;font-size:20px;}
+.pg-avatar-btn{background:none;border:none;padding:0;cursor:pointer;border-radius:50%;position:relative;}
+.pg-avatar-btn:hover .pg-avatar{filter:brightness(1.08);}
+.pg-avatar-btn::after{content:"✎";position:absolute;bottom:-2px;right:-2px;width:20px;height:20px;
+  border-radius:50%;background:var(--sup);border:1px solid var(--linea);font-size:10px;
+  display:flex;align-items:center;justify-content:center;color:var(--tinta2);}
 .pg-menu{position:absolute;top:42px;right:0;width:260px;background:var(--sup);border:1px solid var(--linea);
   border-radius:6px;box-shadow:0 8px 24px rgba(22,33,28,.16);padding:6px;z-index:40;}
 .pg-menu-perfil{display:flex;align-items:center;gap:10px;padding:10px 8px;}
@@ -273,6 +278,8 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
         </div>
       </div>
       <div class="pg-menu-sep"></div>
+      <button class="pg-menu-item" id="menuEditarPerfil" type="button"></button>
+      <div class="pg-menu-sep"></div>
       <button class="pg-menu-item" id="menuIdioma" type="button" aria-haspopup="true" aria-expanded="false">
         <span id="menuIdiomaTxt">ESPAÑOL</span><span aria-hidden="true">⌄</span>
       </button>
@@ -353,8 +360,7 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
 
     <div class="pg-card">
       <h2 class="pg-tit" id="tituloAhorro">Ahorro <span id="lblOpcional">opcional</span>
-        <button class="pg-link" id="btnRecurrentes" type="button" style="margin-left:auto"></button>
-        <button class="pg-colapsar" type="button" data-colapsar="cuerpoAhorro" aria-expanded="true" aria-label=""></button>
+        <button class="pg-colapsar" type="button" data-colapsar="cuerpoAhorro" aria-expanded="true" aria-label="" style="margin-left:auto"></button>
       </h2>
       <div id="cuerpoAhorro">
         <div class="pg-fila pg-campo">
@@ -378,6 +384,59 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
       </div>
     </div>
 
+  </div>
+
+  <div class="pg-card" id="cardRecurrentes" style="margin-top:22px">
+    <h2 class="pg-tit"><span id="tituloRecurrentesModal">Pagos recurrentes</span>
+      <button class="pg-colapsar" type="button" data-colapsar="cuerpoRecurrentes" aria-expanded="false" aria-label="" style="margin-left:auto"></button>
+    </h2>
+    <div id="cuerpoRecurrentes" hidden>
+      <div class="pg-catlista" id="listaRecurrentes" style="max-height:none"></div>
+      <p id="txtRecurrentesInfo" style="font-size:11.5px;color:var(--tinta2);margin:2px 0 16px"></p>
+      <h4 id="tituloFormRecurrente" style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--tinta2);margin:0 0 10px;font-weight:600"></h4>
+      <div class="pg-fila pg-campo">
+        <div>
+          <label class="pg-lab" id="lblRecConcepto" for="recConcepto">Concepto</label>
+          <input id="recConcepto" class="pg-in" maxlength="60" autocomplete="off">
+        </div>
+        <div>
+          <label class="pg-lab" id="lblRecImporte" for="recImporte">Importe (€)</label>
+          <input id="recImporte" class="pg-in pg-in--num" inputmode="decimal" placeholder="0,00">
+        </div>
+      </div>
+      <div class="pg-fila pg-campo">
+        <div>
+          <label class="pg-lab" id="lblRecTipo" for="recTipo">Tipo</label>
+          <select id="recTipo" class="pg-in">
+            <option value="gasto" id="optRecGasto"></option>
+            <option value="ingreso" id="optRecIngreso"></option>
+          </select>
+        </div>
+        <div>
+          <label class="pg-lab" id="lblRecFrecuencia" for="recFrecuencia">Frecuencia</label>
+          <select id="recFrecuencia" class="pg-in">
+            <option value="semanal" id="optFrecSemanal"></option>
+            <option value="mensual" id="optFrecMensual"></option>
+            <option value="trimestral" id="optFrecTrimestral"></option>
+            <option value="semestral" id="optFrecSemestral"></option>
+            <option value="anual" id="optFrecAnual"></option>
+          </select>
+        </div>
+      </div>
+      <div class="pg-fila pg-campo">
+        <div id="wrapRecCategoria">
+          <label class="pg-lab" id="lblRecCategoria" for="recCategoria">Categoría</label>
+          <select id="recCategoria" class="pg-in"></select>
+        </div>
+        <div>
+          <label class="pg-lab" id="lblRecFecha" for="recFecha">Próximo pago</label>
+          <input id="recFecha" type="date" class="pg-in pg-in--num">
+        </div>
+      </div>
+      <button class="pg-btn" id="guardarRecurrente" type="button"></button>
+      <button class="pg-link" id="cancelarEdicionRecurrente" type="button" hidden style="margin-top:8px"></button>
+      <p class="pg-error" id="errorRecurrente"></p>
+    </div>
   </div>
 
   <div class="pg-grid-inferior">
@@ -416,10 +475,40 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
     <input type="file" id="ficheroCopia" accept="application/json" hidden>
   </div>
 
+  <div class="pg-overlay" id="overlayEditarPerfil" hidden>
+    <div class="pg-modal">
+      <h3 id="tituloEditarPerfil">Editar perfil</h3>
+      <div style="display:flex;justify-content:center;margin-bottom:14px">
+        <button type="button" id="btnCambiarFoto" class="pg-avatar-btn" aria-label="">
+          <span class="pg-avatar pg-avatar--enorme" id="avatarEditPreview"></span>
+        </button>
+        <input type="file" id="ficheroFotoEditar" accept="image/*" hidden>
+      </div>
+      <button class="pg-link" id="quitarFotoPerfil" type="button" style="display:block;margin:0 auto 14px" hidden></button>
+      <div class="pg-campo">
+        <label class="pg-lab" id="lblEditNombre" for="editPerfilNombre">Nombre</label>
+        <input id="editPerfilNombre" class="pg-in" maxlength="60" autocomplete="off">
+      </div>
+      <div class="pg-campo">
+        <label class="pg-lab" id="lblEditEmail" for="editPerfilEmail">Email (opcional)</label>
+        <input id="editPerfilEmail" class="pg-in" type="email" autocomplete="off">
+      </div>
+      <button class="pg-btn" id="guardarEditarPerfil" type="button"></button>
+      <p class="pg-error" id="errorEditarPerfil"></p>
+      <button class="pg-link" id="cancelarEditarPerfil" type="button" style="margin-top:12px"></button>
+    </div>
+  </div>
+
   <div class="pg-overlay" id="overlayPerfiles" hidden>
     <div class="pg-modal">
       <h3 id="tituloPerfiles">¿Quién eres?</h3>
       <div class="pg-perfiles" id="listaPerfiles"></div>
+      <div style="display:flex;justify-content:center;margin-bottom:14px">
+        <button type="button" id="btnFotoNuevoPerfil" class="pg-avatar-btn" aria-label="">
+          <span class="pg-avatar pg-avatar--enorme" id="avatarNuevoPerfilPreview">+</span>
+        </button>
+        <input type="file" id="ficheroFotoNuevoPerfil" accept="image/*" hidden>
+      </div>
       <div class="pg-campo">
         <label class="pg-lab" id="lblNombrePerfil" for="nuevoPerfilNombre">Nombre</label>
         <input id="nuevoPerfilNombre" class="pg-in" placeholder="Tu nombre" autocomplete="off" maxlength="60">
@@ -469,56 +558,6 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
     </div>
   </div>
 
-  <div class="pg-overlay" id="overlayRecurrentes" hidden>
-    <div class="pg-modal pg-modal--ancho">
-      <h3 id="tituloRecurrentesModal">Pagos recurrentes</h3>
-      <div class="pg-catlista" id="listaRecurrentes"></div>
-      <h4 id="tituloFormRecurrente" style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--tinta2);margin:16px 0 10px;font-weight:600"></h4>
-      <div class="pg-fila pg-campo">
-        <div>
-          <label class="pg-lab" id="lblRecConcepto" for="recConcepto">Concepto</label>
-          <input id="recConcepto" class="pg-in" maxlength="60" autocomplete="off">
-        </div>
-        <div>
-          <label class="pg-lab" id="lblRecImporte" for="recImporte">Importe (€)</label>
-          <input id="recImporte" class="pg-in pg-in--num" inputmode="decimal" placeholder="0,00">
-        </div>
-      </div>
-      <div class="pg-fila pg-campo">
-        <div>
-          <label class="pg-lab" id="lblRecTipo" for="recTipo">Tipo</label>
-          <select id="recTipo" class="pg-in">
-            <option value="gasto" id="optRecGasto"></option>
-            <option value="ingreso" id="optRecIngreso"></option>
-          </select>
-        </div>
-        <div>
-          <label class="pg-lab" id="lblRecFrecuencia" for="recFrecuencia">Frecuencia</label>
-          <select id="recFrecuencia" class="pg-in">
-            <option value="semanal" id="optFrecSemanal"></option>
-            <option value="mensual" id="optFrecMensual"></option>
-            <option value="trimestral" id="optFrecTrimestral"></option>
-            <option value="semestral" id="optFrecSemestral"></option>
-            <option value="anual" id="optFrecAnual"></option>
-          </select>
-        </div>
-      </div>
-      <div class="pg-fila pg-campo">
-        <div id="wrapRecCategoria">
-          <label class="pg-lab" id="lblRecCategoria" for="recCategoria">Categoría</label>
-          <select id="recCategoria" class="pg-in"></select>
-        </div>
-        <div>
-          <label class="pg-lab" id="lblRecFecha" for="recFecha">Próximo pago</label>
-          <input id="recFecha" type="date" class="pg-in pg-in--num">
-        </div>
-      </div>
-      <button class="pg-btn" id="guardarRecurrente" type="button"></button>
-      <button class="pg-link" id="cancelarEdicionRecurrente" type="button" hidden style="margin-top:8px"></button>
-      <p class="pg-error" id="errorRecurrente"></p>
-      <button class="pg-link" id="cerrarRecurrentes" type="button" style="margin-top:12px"></button>
-    </div>
-  </div>
 
   <div class="pg-overlay" id="overlayOnboarding" hidden>
     <div class="pg-modal pg-modal--ancho">
@@ -578,6 +617,8 @@ var I18N = {
     "titulo.perfiles":"¿Quién eres?","lbl.nombre":"Nombre","placeholder.nombre":"Tu nombre",
     "lbl.email":"Email (opcional)","btn.crearPerfil":"Crear perfil","perfil.errorNombre":"Escribe un nombre.",
     "perfil.migrado":"Tu perfil","menu.salir":"SALIR",
+    "menu.editarPerfil":"Editar perfil","titulo.editarPerfil":"Editar perfil",
+    "perfil.cambiarFoto":"Cambiar foto de perfil","perfil.quitarFoto":"Quitar foto",
     "perfil.borrarAria":"Eliminar perfil {{nombre}}",
     "perfil.confirmarBorrar":"Se borrarán todos los datos de \"{{nombre}}\" (gastos, categorías, todo). ¿Eliminar este perfil?",
     "error.concepto":"Escribe un concepto para el gasto.",
@@ -626,6 +667,7 @@ var I18N = {
     "rec.vacio":"No tienes pagos ni ingresos recurrentes configurados todavía.",
     "rec.tituloNuevo":"Añadir nuevo",
     "rec.tituloEditar":"Editar pago recurrente",
+    "rec.info":"Al editar o crear un pago recurrente, el cambio solo afecta a partir de su próximo pago programado — los gastos ya generados en meses anteriores no se tocan.",
     "rec.errorConcepto":"Escribe un concepto.",
     "rec.errorFecha":"Elige la fecha del próximo pago.",
     "btn.anadirOtro":"+ Añadir otro pago",
@@ -673,6 +715,8 @@ var I18N = {
     "titulo.perfiles":"Who are you?","lbl.nombre":"Name","placeholder.nombre":"Your name",
     "lbl.email":"Email (optional)","btn.crearPerfil":"Create profile","perfil.errorNombre":"Enter a name.",
     "perfil.migrado":"Your profile","menu.salir":"LOG OUT",
+    "menu.editarPerfil":"Edit profile","titulo.editarPerfil":"Edit profile",
+    "perfil.cambiarFoto":"Change profile photo","perfil.quitarFoto":"Remove photo",
     "perfil.borrarAria":"Delete profile {{nombre}}",
     "perfil.confirmarBorrar":"All data for \"{{nombre}}\" (expenses, categories, everything) will be deleted. Delete this profile?",
     "error.concepto":"Enter a description for the expense.",
@@ -721,6 +765,7 @@ var I18N = {
     "rec.vacio":"You don't have any recurring payments or income set up yet.",
     "rec.tituloNuevo":"Add new",
     "rec.tituloEditar":"Edit recurring payment",
+    "rec.info":"Editing or creating a recurring payment only affects its next scheduled payment onward — expenses already generated in past months stay as they are.",
     "rec.errorConcepto":"Enter a description.",
     "rec.errorFecha":"Pick the date of the next payment.",
     "btn.anadirOtro":"+ Add another payment",
@@ -901,9 +946,10 @@ function guardarPerfiles(arr){
   try{ localStorage.setItem(CLAVE_PERFILES, JSON.stringify(arr)); }catch(e){}
 }
 function nuevoIdPerfil(){ return "p-"+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
-function crearPerfil(nombre,email){
+function crearPerfil(nombre,email,foto){
   var perfiles=cargarPerfiles();
   var p={id:nuevoIdPerfil(), nombre:nombre.trim(), email:(email||"").trim(), creado:hoyISO()};
+  if(foto) p.foto=foto;
   perfiles.push(p);
   guardarPerfiles(perfiles);
   return p;
@@ -914,6 +960,41 @@ function inicialesDe(nombre){
   var ini=partes[0].charAt(0);
   if(partes.length>1) ini+=partes[1].charAt(0);
   return ini.toUpperCase();
+}
+/* redimensiona y comprime una foto de perfil antes de guardarla (localStorage tiene poco espacio) */
+function redimensionarImagen(file,maxDim,callback){
+  var lector=new FileReader();
+  lector.onload=function(){
+    var img=new Image();
+    img.onload=function(){
+      var escala=Math.min(1, maxDim/Math.max(img.width,img.height));
+      var canvas=document.createElement("canvas");
+      canvas.width=Math.max(1,Math.round(img.width*escala));
+      canvas.height=Math.max(1,Math.round(img.height*escala));
+      canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);
+      callback(canvas.toDataURL("image/jpeg",0.85));
+    };
+    img.src=lector.result;
+  };
+  lector.readAsDataURL(file);
+}
+/* aplica foto o iniciales a un <span class="pg-avatar"> ya existente en el DOM */
+function pintarAvatarEl(el,nombre,foto){
+  if(!el) return;
+  if(foto){
+    el.style.backgroundImage="url('"+foto+"')";
+    el.style.backgroundSize="cover";
+    el.style.backgroundPosition="center";
+    el.textContent="";
+  }else{
+    el.style.backgroundImage="";
+    el.textContent=inicialesDe(nombre);
+  }
+}
+/* genera el <span class="pg-avatar"> como texto HTML, para listas construidas con innerHTML */
+function avatarSpanHTML(clase,nombre,foto){
+  if(foto) return '<span class="'+clase+'" style="background-image:url(\''+foto+'\');background-size:cover;background-position:center"></span>';
+  return '<span class="'+clase+'">'+esc(inicialesDe(nombre))+'</span>';
 }
 function claveDatos(){ return "panel-gastos:data:"+perfilActivoId; }
 function claveUltimaCopia(){ return "panel-gastos:ultimaCopia:"+perfilActivoId; }
@@ -1313,6 +1394,10 @@ function render(){
       '<div class="pg-pie" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linea);font-weight:700;color:var(--pino)"><span>'+t("ahorro.boteAcumulado")+'</span><span class="pg-mono">'+eur.format(bote)+'</span></div>'+
     '</div>'
     : '<p class="pg-vacio">'+t("ahorro.vacio")+'</p>';
+
+  /* lista de pagos recurrentes: se refresca aquí también por si se acaban de generar
+     movimientos automáticamente (cambia su "próximo pago") */
+  renderListaRecurrentes();
 }
 
 /* suma de (ingreso - gastado) en cada mes donde se haya indicado un ingreso */
@@ -1852,9 +1937,8 @@ function actualizarMenuUsuario(){
   var p = cargarPerfiles().filter(function(x){ return x.id===perfilActivoId; })[0];
   var nombre = p ? p.nombre : "";
   var email = p ? p.email : "";
-  var ini = inicialesDe(nombre);
-  $("avatarBoton").textContent = ini;
-  $("avatarMenu").textContent = ini;
+  pintarAvatarEl($("avatarBoton"), nombre, p&&p.foto);
+  pintarAvatarEl($("avatarMenu"), nombre, p&&p.foto);
   $("menuNombre").textContent = nombre.toUpperCase();
   $("menuEmail").textContent = email;
   $("menuEmail").hidden = !email;
@@ -1865,12 +1949,27 @@ function cerrarMenuUsuario(){
   $("menuIdiomaSub").classList.remove("pg-abierto");
 }
 
+/* ---------- editar perfil (nombre, email, foto) ---------- */
+var fotoEditarTemporal=undefined; /* undefined = sin cambios; null = quitar foto; string = foto nueva */
+function abrirEditarPerfil(){
+  var p = cargarPerfiles().filter(function(x){ return x.id===perfilActivoId; })[0];
+  if(!p) return;
+  fotoEditarTemporal=undefined;
+  $("editPerfilNombre").value=p.nombre;
+  $("editPerfilEmail").value=p.email||"";
+  pintarAvatarEl($("avatarEditPreview"), p.nombre, p.foto);
+  $("quitarFotoPerfil").hidden=!p.foto;
+  $("errorEditarPerfil").textContent="";
+  cerrarMenuUsuario();
+  abrirModal("overlayEditarPerfil");
+}
+
 /* ---------- perfiles: selector, alta y baja ---------- */
 function renderListaPerfiles(){
   $("listaPerfiles").innerHTML = cargarPerfiles().map(function(p){
     return '<div class="pg-perfil-fila">'+
       '<button type="button" class="pg-perfil-select" data-perfil="'+p.id+'">'+
-      '<span class="pg-avatar">'+esc(inicialesDe(p.nombre))+'</span>'+
+      avatarSpanHTML("pg-avatar", p.nombre, p.foto)+
       '<span><span class="pg-perfil-nombre">'+esc(p.nombre)+'</span>'+
       (p.email ? '<span class="pg-perfil-email">'+esc(p.email)+'</span>' : '')+
       '</span></button>'+
@@ -1895,6 +1994,7 @@ function actualizarBotonCancelarPerfiles(){
   var activoValido = !!perfilActivoId && cargarPerfiles().some(function(p){ return p.id===perfilActivoId; });
   $("cancelarPerfiles").hidden = selectorPerfilesForzado || !activoValido;
 }
+var fotoNuevoPerfil=null;
 function mostrarSelectorPerfiles(forzado){
   selectorPerfilesForzado=!!forzado;
   renderListaPerfiles();
@@ -1902,6 +2002,9 @@ function mostrarSelectorPerfiles(forzado){
   $("errorPerfil").textContent="";
   $("nuevoPerfilNombre").value="";
   $("nuevoPerfilEmail").value="";
+  fotoNuevoPerfil=null;
+  $("avatarNuevoPerfilPreview").style.backgroundImage="";
+  $("avatarNuevoPerfilPreview").textContent="+";
   cerrarMenuUsuario();
   abrirModal("overlayPerfiles");
 }
@@ -1915,8 +2018,8 @@ function entrarPerfil(id){
   aplicarIdioma();
   render();
 }
-function crearPerfilYEntrar(nombre,email){
-  var p = crearPerfil(nombre,email);
+function crearPerfilYEntrar(nombre,email,foto){
+  var p = crearPerfil(nombre,email,foto);
   perfilActivoId = p.id;
   try{ localStorage.setItem(CLAVE_ACTIVO, p.id); }catch(e){}
   estado = estadoVacio();
@@ -1955,7 +2058,6 @@ function aplicarIdioma(){
   $("guardar").textContent = t("btn.guardarGasto");
   $("tituloAhorro").firstChild.nodeValue = t("titulo.ahorro")+" ";
   $("lblOpcional").textContent = t("lbl.opcional");
-  $("btnRecurrentes").textContent = t("btn.recurrentes");
   $("lblIngresos").textContent = t("lbl.ingresos");
   $("lblPresupuesto").textContent = t("lbl.presupuesto");
   $("lblFijarTodos").textContent = t("lbl.fijarTodos");
@@ -1999,7 +2101,7 @@ function aplicarIdioma(){
   $("lblRecCategoria").textContent = t("lbl.recCategoria");
   $("lblRecFecha").textContent = t("lbl.recFecha");
   $("cancelarEdicionRecurrente").textContent = t("btn.cancelar");
-  $("cerrarRecurrentes").textContent = t("btn.cerrar");
+  $("txtRecurrentesInfo").textContent = t("rec.info");
   $("tituloOnboarding").textContent = t("titulo.onboarding");
   $("txtOnboarding").textContent = t("txt.onboarding");
   $("anadirOnbPersonalizado").textContent = t("btn.anadirOtro");
@@ -2008,7 +2110,8 @@ function aplicarIdioma(){
   $("tituloCiclicos").textContent = t("titulo.ciclicos");
   $("guardarCiclicos").textContent = t("btn.guardarCiclicos");
   $("omitirCiclicos").textContent = t("btn.omitir");
-  if(!$("overlayRecurrentes").hidden){ renderListaRecurrentes(); renderSelectorCategoriaRecurrente(); limpiarFormRecurrente(); }
+  renderListaRecurrentes(); renderSelectorCategoriaRecurrente();
+  if(!$("cuerpoRecurrentes").hidden && !recurrenteEditandoId) limpiarFormRecurrente();
   $("tituloPerfiles").textContent = t("titulo.perfiles");
   $("lblNombrePerfil").textContent = t("lbl.nombre");
   $("nuevoPerfilNombre").placeholder = t("placeholder.nombre");
@@ -2020,6 +2123,15 @@ function aplicarIdioma(){
     o.setAttribute("aria-pressed", o.getAttribute("data-lang")===LANG);
   });
   $("menuSalir").textContent = t("menu.salir");
+  $("menuEditarPerfil").textContent = t("menu.editarPerfil");
+  $("tituloEditarPerfil").textContent = t("titulo.editarPerfil");
+  $("btnFotoNuevoPerfil").setAttribute("aria-label", t("perfil.cambiarFoto"));
+  $("btnCambiarFoto").setAttribute("aria-label", t("perfil.cambiarFoto"));
+  $("lblEditNombre").textContent = t("lbl.nombre");
+  $("lblEditEmail").textContent = t("lbl.email");
+  $("quitarFotoPerfil").textContent = t("perfil.quitarFoto");
+  $("guardarEditarPerfil").textContent = t("btn.guardarCambios");
+  $("cancelarEditarPerfil").textContent = t("btn.cancelar");
   document.querySelectorAll("[data-colapsar]").forEach(actualizarBotonColapsar);
   actualizarMenuUsuario();
   actualizarRecordatorioCopia();
@@ -2293,6 +2405,44 @@ function inicializarEventos(){
     cerrarMenuUsuario();
     mostrarSelectorPerfiles(false);
   });
+  $("menuEditarPerfil").addEventListener("click", abrirEditarPerfil);
+
+  /* editar perfil: foto, nombre, email */
+  $("btnCambiarFoto").addEventListener("click", function(){ $("ficheroFotoEditar").click(); });
+  $("ficheroFotoEditar").addEventListener("change", function(e){
+    var f=e.target.files[0]; if(!f) return;
+    redimensionarImagen(f, 200, function(dataUrl){
+      fotoEditarTemporal=dataUrl;
+      pintarAvatarEl($("avatarEditPreview"), $("editPerfilNombre").value, dataUrl);
+      $("quitarFotoPerfil").hidden=false;
+    });
+    e.target.value="";
+  });
+  $("quitarFotoPerfil").addEventListener("click", function(){
+    fotoEditarTemporal=null;
+    pintarAvatarEl($("avatarEditPreview"), $("editPerfilNombre").value, null);
+    $("quitarFotoPerfil").hidden=true;
+  });
+  $("guardarEditarPerfil").addEventListener("click", function(){
+    var nombre=$("editPerfilNombre").value.trim();
+    if(!nombre){ $("errorEditarPerfil").textContent=t("perfil.errorNombre"); return; }
+    var perfiles=cargarPerfiles();
+    var p=perfiles.filter(function(x){ return x.id===perfilActivoId; })[0];
+    if(!p) return;
+    p.nombre=nombre;
+    p.email=$("editPerfilEmail").value.trim();
+    if(fotoEditarTemporal!==undefined){
+      if(fotoEditarTemporal) p.foto=fotoEditarTemporal;
+      else delete p.foto;
+    }
+    guardarPerfiles(perfiles);
+    cerrarModal("overlayEditarPerfil");
+    aplicarIdioma();
+  });
+  $("cancelarEditarPerfil").addEventListener("click", function(){ cerrarModal("overlayEditarPerfil"); });
+  $("overlayEditarPerfil").addEventListener("click", function(e){
+    if(e.target===$("overlayEditarPerfil")) cerrarModal("overlayEditarPerfil");
+  });
 
   /* selector de perfiles */
   $("listaPerfiles").addEventListener("click", function(e){
@@ -2310,10 +2460,19 @@ function inicializarEventos(){
     var b=e.target.closest("[data-perfil]"); if(!b) return;
     entrarPerfil(b.getAttribute("data-perfil"));
   });
+  $("btnFotoNuevoPerfil").addEventListener("click", function(){ $("ficheroFotoNuevoPerfil").click(); });
+  $("ficheroFotoNuevoPerfil").addEventListener("change", function(e){
+    var f=e.target.files[0]; if(!f) return;
+    redimensionarImagen(f, 200, function(dataUrl){
+      fotoNuevoPerfil=dataUrl;
+      pintarAvatarEl($("avatarNuevoPerfilPreview"), $("nuevoPerfilNombre").value, dataUrl);
+    });
+    e.target.value="";
+  });
   $("crearPerfilBtn").addEventListener("click", function(){
     var nombre=$("nuevoPerfilNombre").value.trim();
     if(!nombre){ $("errorPerfil").textContent=t("perfil.errorNombre"); return; }
-    crearPerfilYEntrar(nombre, $("nuevoPerfilEmail").value.trim());
+    crearPerfilYEntrar(nombre, $("nuevoPerfilEmail").value.trim(), fotoNuevoPerfil);
   });
   $("cancelarPerfiles").addEventListener("click", function(){ cerrarModal("overlayPerfiles"); });
   $("overlayPerfiles").addEventListener("click", function(e){
@@ -2425,17 +2584,9 @@ function inicializarEventos(){
     mostrarCiclicosDetectados(candidatosCiclicos);
   });
 
-  /* pagos recurrentes */
-  $("btnRecurrentes").addEventListener("click", function(){
-    renderListaRecurrentes();
-    renderSelectorCategoriaRecurrente();
-    limpiarFormRecurrente();
-    abrirModal("overlayRecurrentes");
-  });
-  $("cerrarRecurrentes").addEventListener("click", function(){ cerrarModal("overlayRecurrentes"); });
-  $("overlayRecurrentes").addEventListener("click", function(e){
-    if(e.target===$("overlayRecurrentes")) cerrarModal("overlayRecurrentes");
-  });
+  /* pagos recurrentes: la tarjeta es una sección normal de la página (no un modal),
+     así que solo hace falta inicializar su formulario la primera vez */
+  limpiarFormRecurrente();
   $("recTipo").addEventListener("change", actualizarVisibilidadCategoriaRecurrente);
   $("listaRecurrentes").addEventListener("click", function(e){
     var editar=e.target.closest("[data-editarrec]");
