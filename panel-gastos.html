@@ -187,6 +187,16 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
   border-radius:2px;padding:4px 5px;width:100%;background:#fff;box-sizing:border-box;}
 .pg-transf-aviso{font-size:9.5px;color:var(--tinta2);white-space:nowrap;margin-top:3px;}
 
+.pg-rec-fila{display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid var(--linea);}
+.pg-rec-fila:last-child{border-bottom:none;}
+.pg-rec-info{flex:1;min-width:0;}
+.pg-rec-concepto{font-size:13px;font-weight:600;}
+.pg-rec-detalle{font-size:11px;color:var(--tinta2);margin-top:1px;}
+.pg-rec-importe{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13px;white-space:nowrap;}
+.pg-rec-importe--ingreso{color:var(--pino);}
+.pg-preset-importe{width:90px;flex:none;font:inherit;font-size:12px;border:1px solid var(--linea);
+  border-radius:2px;padding:5px 7px;box-sizing:border-box;}
+
 @media(prefers-reduced-motion:reduce){.pg *{transition:none!important;animation:none!important;}}
 </style>
 </head>
@@ -273,7 +283,9 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
       </div>
 
       <div class="pg-card">
-        <h2 class="pg-tit" id="tituloAhorro">Ahorro <span id="lblOpcional">opcional</span></h2>
+        <h2 class="pg-tit" id="tituloAhorro">Ahorro <span id="lblOpcional">opcional</span>
+          <button class="pg-link" id="btnRecurrentes" type="button" style="margin-left:auto"></button>
+        </h2>
         <div class="pg-fila pg-campo">
           <div>
             <label class="pg-lab" id="lblIngresos" for="ingresos">Ingresos del mes (€)</label>
@@ -379,6 +391,76 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
       </div>
     </div>
   </div>
+
+  <div class="pg-overlay" id="overlayRecurrentes" hidden>
+    <div class="pg-modal pg-modal--ancho">
+      <h3 id="tituloRecurrentesModal">Pagos recurrentes</h3>
+      <div class="pg-catlista" id="listaRecurrentes"></div>
+      <h4 id="tituloFormRecurrente" style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--tinta2);margin:16px 0 10px;font-weight:600"></h4>
+      <div class="pg-fila pg-campo">
+        <div>
+          <label class="pg-lab" id="lblRecConcepto" for="recConcepto">Concepto</label>
+          <input id="recConcepto" class="pg-in" maxlength="60" autocomplete="off">
+        </div>
+        <div>
+          <label class="pg-lab" id="lblRecImporte" for="recImporte">Importe (€)</label>
+          <input id="recImporte" class="pg-in pg-in--num" inputmode="decimal" placeholder="0,00">
+        </div>
+      </div>
+      <div class="pg-fila pg-campo">
+        <div>
+          <label class="pg-lab" id="lblRecTipo" for="recTipo">Tipo</label>
+          <select id="recTipo" class="pg-in">
+            <option value="gasto" id="optRecGasto"></option>
+            <option value="ingreso" id="optRecIngreso"></option>
+          </select>
+        </div>
+        <div>
+          <label class="pg-lab" id="lblRecFrecuencia" for="recFrecuencia">Frecuencia</label>
+          <select id="recFrecuencia" class="pg-in">
+            <option value="mensual" id="optFrecMensual"></option>
+            <option value="trimestral" id="optFrecTrimestral"></option>
+            <option value="semestral" id="optFrecSemestral"></option>
+            <option value="anual" id="optFrecAnual"></option>
+          </select>
+        </div>
+      </div>
+      <div class="pg-fila pg-campo">
+        <div id="wrapRecCategoria">
+          <label class="pg-lab" id="lblRecCategoria" for="recCategoria">Categoría</label>
+          <select id="recCategoria" class="pg-in"></select>
+        </div>
+        <div>
+          <label class="pg-lab" id="lblRecDia" for="recDia">Día del mes</label>
+          <input id="recDia" type="number" min="1" max="28" value="1" class="pg-in pg-in--num">
+        </div>
+      </div>
+      <button class="pg-btn" id="guardarRecurrente" type="button"></button>
+      <button class="pg-link" id="cancelarEdicionRecurrente" type="button" hidden style="margin-top:8px"></button>
+      <p class="pg-error" id="errorRecurrente"></p>
+      <button class="pg-link" id="cerrarRecurrentes" type="button" style="margin-top:12px"></button>
+    </div>
+  </div>
+
+  <div class="pg-overlay" id="overlayOnboarding" hidden>
+    <div class="pg-modal pg-modal--ancho">
+      <h3 id="tituloOnboarding">¿Tienes pagos o ingresos que se repiten cada mes?</h3>
+      <p id="txtOnboarding" style="font-size:12px;color:var(--tinta2);margin:0 0 14px"></p>
+      <div id="listaOnboarding" class="pg-catlista"></div>
+      <button class="pg-btn" id="guardarOnboarding" type="button"></button>
+      <button class="pg-link" id="omitirOnboarding" type="button" style="margin-top:12px"></button>
+    </div>
+  </div>
+
+  <div class="pg-overlay" id="overlayCiclicos" hidden>
+    <div class="pg-modal">
+      <h3 id="tituloCiclicos">Hemos detectado pagos que se repiten</h3>
+      <p id="txtCiclicos" style="font-size:12px;color:var(--tinta2);margin:0 0 14px"></p>
+      <div id="listaCiclicos" class="pg-catlista"></div>
+      <button class="pg-btn" id="guardarCiclicos" type="button"></button>
+      <button class="pg-link" id="omitirCiclicos" type="button" style="margin-top:12px"></button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -445,7 +527,30 @@ var I18N = {
     "ahorro.vacio":"Añade tus ingresos del mes para empezar a generar el bote de ahorro.",
     "acum.titulo":"Acumulado del mes","acum.diaRangoTpl":"Día 1 — día {{n}}",
     "acum.ritmo":" · la línea de puntos es el ritmo del presupuesto",
-    "eyebrow.tpl":"Gastos de {{mes}}"
+    "eyebrow.tpl":"Gastos de {{mes}}",
+    "btn.recurrentes":"Pagos recurrentes","btn.editar":"Editar","btn.guardarCambios":"Guardar cambios",
+    "btn.omitir":"Ahora no",
+    "titulo.recurrentesModal":"Pagos recurrentes",
+    "lbl.recConcepto":"Concepto","lbl.recImporte":"Importe (€)","lbl.recTipo":"Tipo",
+    "lbl.recFrecuencia":"Frecuencia","lbl.recCategoria":"Categoría","lbl.recDia":"Día del mes",
+    "rec.gasto":"Gasto","rec.ingreso":"Ingreso",
+    "frec.mensual":"Mensual","frec.trimestral":"Trimestral","frec.semestral":"Semestral","frec.anual":"Anual",
+    "rec.diaTpl":"día {{n}}",
+    "rec.borrarAria":"Eliminar pago recurrente {{nombre}}",
+    "rec.confirmarBorrar":"¿Eliminar el pago recurrente \"{{nombre}}\"? Dejará de generarse en los próximos meses (los que ya se generaron no se borran).",
+    "rec.vacio":"No tienes pagos ni ingresos recurrentes configurados todavía.",
+    "rec.tituloNuevo":"Añadir nuevo",
+    "rec.tituloEditar":"Editar pago recurrente",
+    "rec.errorConcepto":"Escribe un concepto.",
+    "titulo.onboarding":"¿Tienes pagos o ingresos que se repiten cada mes?",
+    "txt.onboarding":"Márcalos y ponles un importe para que se añadan solos cada vez que llega su mes. Puedes cambiarlos luego desde \"Pagos recurrentes\".",
+    "preset.nomina":"Nómina","preset.alquiler":"Alquiler / Hipoteca","preset.gimnasio":"Gimnasio",
+    "preset.suscripciones":"Suscripciones (streaming, etc)","preset.comunidad":"Comunidad de vecinos",
+    "preset.seguro":"Seguro","preset.ibi":"IBI",
+    "titulo.ciclicos":"Hemos detectado pagos que se repiten",
+    "ciclico.txt":"Al importar hemos visto {{n}} pago(s) con un patrón regular. Márcalos para que a partir de ahora se añadan solos cada mes que toque.",
+    "ciclico.vecesTpl":"visto {{n}} veces",
+    "btn.guardarCiclicos":"Programar los marcados"
   },
   en: {
     "aria.meses":"Months","aria.mesNuevo":"Month to add","aria.reparto":"Spending breakdown by category",
@@ -508,7 +613,30 @@ var I18N = {
     "ahorro.vacio":"Add your income for the month to start building your savings pot.",
     "acum.titulo":"Running total this month","acum.diaRangoTpl":"Day 1 — day {{n}}",
     "acum.ritmo":" · the dotted line is your budget pace",
-    "eyebrow.tpl":"Expenses for {{mes}}"
+    "eyebrow.tpl":"Expenses for {{mes}}",
+    "btn.recurrentes":"Recurring payments","btn.editar":"Edit","btn.guardarCambios":"Save changes",
+    "btn.omitir":"Not now",
+    "titulo.recurrentesModal":"Recurring payments",
+    "lbl.recConcepto":"Description","lbl.recImporte":"Amount (€)","lbl.recTipo":"Type",
+    "lbl.recFrecuencia":"Frequency","lbl.recCategoria":"Category","lbl.recDia":"Day of month",
+    "rec.gasto":"Expense","rec.ingreso":"Income",
+    "frec.mensual":"Monthly","frec.trimestral":"Quarterly","frec.semestral":"Twice a year","frec.anual":"Yearly",
+    "rec.diaTpl":"day {{n}}",
+    "rec.borrarAria":"Delete recurring payment {{nombre}}",
+    "rec.confirmarBorrar":"Delete the recurring payment \"{{nombre}}\"? It will stop being generated in future months (past months already generated stay as they are).",
+    "rec.vacio":"You don't have any recurring payments or income set up yet.",
+    "rec.tituloNuevo":"Add new",
+    "rec.tituloEditar":"Edit recurring payment",
+    "rec.errorConcepto":"Enter a description.",
+    "titulo.onboarding":"Do you have payments or income that repeat every month?",
+    "txt.onboarding":"Check the ones that apply and set an amount so they get added automatically each time their month comes around. You can change them later from \"Recurring payments\".",
+    "preset.nomina":"Salary","preset.alquiler":"Rent / Mortgage","preset.gimnasio":"Gym",
+    "preset.suscripciones":"Subscriptions (streaming, etc)","preset.comunidad":"Building/HOA fees",
+    "preset.seguro":"Insurance","preset.ibi":"Property tax",
+    "titulo.ciclicos":"We've found some recurring payments",
+    "ciclico.txt":"While importing we spotted {{n}} payment(s) with a regular pattern. Check the ones you want to auto-add every month from now on.",
+    "ciclico.vecesTpl":"seen {{n}} times",
+    "btn.guardarCiclicos":"Schedule the checked ones"
   }
 };
 var NOMBRES_IDIOMA = {es:"ESPAÑOL", en:"ENGLISH"};
@@ -634,28 +762,6 @@ function esIOS(){
   return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 }
 
-/* ---------- datos de ejemplo ---------- */
-function ejemplos(){
-  var hoy=new Date(), ym=hoy.getFullYear()+"-"+p2(hoy.getMonth()+1);
-  var f=function(d){ return ym+"-"+p2(Math.min(d,hoy.getDate())); };
-  var base=[
-    [1,"Alquiler",850,"vivienda"],
-    [2,"Compra semanal",78.40,"alimentacion"],
-    [3,"Abono transporte",54.60,"transporte"],
-    [6,"Luz y agua",62.15,"servicios"],
-    [9,"Cena con amigos",42,"ocio"],
-    [12,"Compra semanal",66.20,"alimentacion"],
-    [14,"Farmacia",18.75,"salud"],
-    [17,"Gasolina",55,"transporte"],
-    [19,"Internet y móvil",39.90,"servicios"],
-    [21,"Cine",19,"ocio"],
-    [23,"Compra semanal",71.05,"alimentacion"]
-  ];
-  return base.map(function(b,i){
-    return {id:"ej-"+i, concepto:b[1], importe:b[2], categoria:b[3], fecha:f(b[0])};
-  });
-}
-
 /* ---------- perfiles ---------- */
 var CLAVE_LEGACY="panel-gastos:v1";
 var CLAVE_PERFILES="panel-gastos:perfiles";
@@ -735,14 +841,11 @@ function mesesDeDatos(d){
   return [...s];
 }
 function estadoVacio(){
-  return {gastos:[], presupuestos:{}, ingresos:{}, meses:[mesDe(hoyISO())], categoriasPersonalizadas:[], categoriasEliminadas:[]};
-}
-function estadoDemo(){
-  var hoyM=mesDe(hoyISO());
-  var e={gastos:ejemplos(), presupuestos:{}, ingresos:{}, meses:[hoyM], categoriasPersonalizadas:[], categoriasEliminadas:[]};
-  e.presupuestos[hoyM]=1500;
-  e.ingresos[hoyM]=2100;
-  return e;
+  return {
+    gastos:[], presupuestos:{}, ingresos:{}, meses:[mesDe(hoyISO())],
+    categoriasPersonalizadas:[], categoriasEliminadas:[],
+    recurrentes:[], recurrentesGenerados:{}
+  };
 }
 function cargarEstado(){
   try{
@@ -754,7 +857,9 @@ function cargarEstado(){
         estado={
           gastos:d.gastos, presupuestos:d.presupuestos||{}, ingresos:d.ingresos||{}, meses:mesesGuardados,
           categoriasPersonalizadas: Array.isArray(d.categoriasPersonalizadas) ? d.categoriasPersonalizadas : [],
-          categoriasEliminadas: Array.isArray(d.categoriasEliminadas) ? d.categoriasEliminadas : []
+          categoriasEliminadas: Array.isArray(d.categoriasEliminadas) ? d.categoriasEliminadas : [],
+          recurrentes: Array.isArray(d.recurrentes) ? d.recurrentes : [],
+          recurrentesGenerados: (d.recurrentesGenerados && typeof d.recurrentesGenerados==="object") ? d.recurrentesGenerados : {}
         };
         var meses=mesesGuardados.slice().sort();
         mes = (meses.length && meses.indexOf(mesDe(hoyISO()))===-1) ? meses[meses.length-1] : mesDe(hoyISO());
@@ -823,6 +928,75 @@ function eliminarCategoria(id){
     estado.categoriasPersonalizadas = estado.categoriasPersonalizadas.filter(function(c){ return c.id!==id; });
   }
   if(categoria===id) categoria="otros";
+  guardarEstado();
+}
+
+/* ---------- pagos e ingresos recurrentes ---------- */
+var FRECUENCIAS=["mensual","trimestral","semestral","anual"];
+function nuevoIdRecurrente(){ return "r-"+Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
+function mesesEntre(m1,m2){
+  var a1=+m1.slice(0,4), mo1=+m1.slice(5,7);
+  var a2=+m2.slice(0,4), mo2=+m2.slice(5,7);
+  return (a2-a1)*12+(mo2-mo1);
+}
+function debeGenerarse(rec,m){
+  var offset=mesesEntre(rec.mesInicio,m);
+  if(offset<0) return false;
+  if(rec.frecuencia==="mensual") return true;
+  if(rec.frecuencia==="trimestral") return offset%3===0;
+  if(rec.frecuencia==="semestral") return offset%6===0;
+  if(rec.frecuencia==="anual") return offset%12===0;
+  return false;
+}
+/* genera los gastos/ingresos recurrentes pendientes para un mes dado (evita duplicar si ya se generaron) */
+function generarRecurrentesParaMes(m){
+  if(!estado.recurrentes || !estado.recurrentes.length) return;
+  estado.recurrentesGenerados = estado.recurrentesGenerados || {};
+  var yaGenerados = estado.recurrentesGenerados[m] || [];
+  var cambios=false;
+  estado.recurrentes.forEach(function(rec){
+    if(!rec.activo) return;
+    if(yaGenerados.indexOf(rec.id)!==-1) return;
+    if(!debeGenerarse(rec,m)) return;
+    var dia=Math.min(rec.dia||1, diasDelMes(m));
+    var fecha=m+"-"+p2(dia);
+    if(rec.tipo==="ingreso"){
+      estado.ingresos[m]=(estado.ingresos[m]||0)+rec.importe;
+    }else{
+      estado.gastos.push({
+        id:"g-"+Date.now().toString(36)+Math.random().toString(36).slice(2,7),
+        concepto:rec.concepto, importe:rec.importe, categoria:rec.categoria||"otros",
+        fecha:fecha, recurrenteId:rec.id
+      });
+    }
+    yaGenerados.push(rec.id);
+    cambios=true;
+  });
+  estado.recurrentesGenerados[m]=yaGenerados;
+  if(cambios) guardarEstado();
+}
+function agregarRecurrente(datos){
+  estado.recurrentes = estado.recurrentes||[];
+  estado.recurrentes.push({
+    id:nuevoIdRecurrente(), tipo:datos.tipo, concepto:datos.concepto, importe:datos.importe,
+    categoria:datos.categoria||"otros", frecuencia:datos.frecuencia, dia:datos.dia||1,
+    mesInicio:datos.mesInicio||mes, activo:true
+  });
+  guardarEstado();
+  generarRecurrentesParaMes(mes);
+}
+function actualizarRecurrente(id,datos){
+  var rec=(estado.recurrentes||[]).filter(function(r){ return r.id===id; })[0];
+  if(!rec) return;
+  rec.tipo=datos.tipo; rec.concepto=datos.concepto; rec.importe=datos.importe;
+  rec.categoria=datos.categoria||"otros"; rec.frecuencia=datos.frecuencia; rec.dia=datos.dia||1;
+  guardarEstado();
+}
+function eliminarRecurrente(id){
+  estado.recurrentes = (estado.recurrentes||[]).filter(function(r){ return r.id!==id; });
+  Object.keys(estado.recurrentesGenerados||{}).forEach(function(m){
+    estado.recurrentesGenerados[m] = estado.recurrentesGenerados[m].filter(function(x){ return x!==id; });
+  });
   guardarEstado();
 }
 
@@ -1236,6 +1410,132 @@ function renderPaletaNuevaCategoria(){
   }).join("");
 }
 
+/* ---------- pagos recurrentes: modal de gestión ---------- */
+var recurrenteEditandoId=null;
+function textoFrecuencia(f){ return t("frec."+f); }
+function renderListaRecurrentes(){
+  var recs=(estado.recurrentes||[]).slice().sort(function(a,b){ return a.concepto.localeCompare(b.concepto); });
+  $("listaRecurrentes").innerHTML = recs.length ? recs.map(function(r){
+    var catNom = r.tipo==="gasto" ? categoriaPorId(r.categoria).nombre+" · " : "";
+    return '<div class="pg-rec-fila" data-recurrente="'+r.id+'">'+
+      '<div class="pg-rec-info">'+
+        '<div class="pg-rec-concepto">'+esc(r.concepto)+'</div>'+
+        '<div class="pg-rec-detalle">'+catNom+textoFrecuencia(r.frecuencia)+' · '+t("rec.diaTpl",{n:r.dia})+'</div>'+
+      '</div>'+
+      '<div class="pg-rec-importe'+(r.tipo==="ingreso"?" pg-rec-importe--ingreso":"")+'">'+
+        (r.tipo==="ingreso"?"+":"−")+eur.format(r.importe)+'</div>'+
+      '<button class="pg-link" type="button" data-editarrec="'+r.id+'">'+t("btn.editar")+'</button>'+
+      '<button class="pg-x" type="button" data-borrarrec="'+r.id+'" aria-label="'+t("rec.borrarAria",{nombre:esc(r.concepto)})+'">×</button>'+
+      '</div>';
+  }).join("") : '<p class="pg-vacio">'+t("rec.vacio")+'</p>';
+}
+function renderSelectorCategoriaRecurrente(){
+  $("recCategoria").innerHTML = categoriasActuales().map(function(c){
+    return '<option value="'+c.id+'">'+esc(c.nombre)+'</option>';
+  }).join("");
+}
+function actualizarVisibilidadCategoriaRecurrente(){
+  $("wrapRecCategoria").style.display = $("recTipo").value==="ingreso" ? "none" : "";
+}
+function limpiarFormRecurrente(){
+  recurrenteEditandoId=null;
+  $("recConcepto").value=""; $("recImporte").value=""; $("recDia").value="1";
+  $("recTipo").value="gasto"; $("recFrecuencia").value="mensual";
+  actualizarVisibilidadCategoriaRecurrente();
+  $("errorRecurrente").textContent="";
+  $("guardarRecurrente").textContent=t("btn.anadir");
+  $("cancelarEdicionRecurrente").hidden=true;
+  $("tituloFormRecurrente").textContent=t("rec.tituloNuevo");
+}
+function cargarFormRecurrente(rec){
+  recurrenteEditandoId=rec.id;
+  $("recConcepto").value=rec.concepto;
+  $("recImporte").value=decimalATexto(rec.importe);
+  $("recTipo").value=rec.tipo;
+  $("recFrecuencia").value=rec.frecuencia;
+  $("recCategoria").value=rec.categoria||"otros";
+  $("recDia").value=rec.dia||1;
+  actualizarVisibilidadCategoriaRecurrente();
+  $("errorRecurrente").textContent="";
+  $("guardarRecurrente").textContent=t("btn.guardarCambios");
+  $("cancelarEdicionRecurrente").hidden=false;
+  $("tituloFormRecurrente").textContent=t("rec.tituloEditar");
+}
+
+/* ---------- onboarding de recurrentes al crear perfil ---------- */
+var PRESETS_ONBOARDING=[
+  {id:"nomina", tipo:"ingreso", frecuencia:"mensual", categoria:null},
+  {id:"alquiler", tipo:"gasto", frecuencia:"mensual", categoria:"vivienda"},
+  {id:"gimnasio", tipo:"gasto", frecuencia:"mensual", categoria:"salud"},
+  {id:"suscripciones", tipo:"gasto", frecuencia:"mensual", categoria:"ocio"},
+  {id:"comunidad", tipo:"gasto", frecuencia:"trimestral", categoria:"vivienda"},
+  {id:"seguro", tipo:"gasto", frecuencia:"anual", categoria:"servicios"},
+  {id:"ibi", tipo:"gasto", frecuencia:"anual", categoria:"vivienda"}
+];
+function mostrarOnboardingRecurrentes(){
+  $("listaOnboarding").innerHTML = PRESETS_ONBOARDING.map(function(p){
+    var etiquetaTipo = p.tipo==="ingreso" ? t("rec.ingreso") : t("rec.gasto");
+    return '<div class="pg-rec-fila">'+
+      '<input type="checkbox" data-preset="'+p.id+'">'+
+      '<div class="pg-rec-info"><div class="pg-rec-concepto">'+t("preset."+p.id)+'</div>'+
+      '<div class="pg-rec-detalle">'+etiquetaTipo+' · '+textoFrecuencia(p.frecuencia)+'</div></div>'+
+      '<input type="text" inputmode="decimal" class="pg-preset-importe" placeholder="'+t("placeholder.decimal")+'" data-preset-importe="'+p.id+'" hidden>'+
+      '</div>';
+  }).join("");
+  abrirModal("overlayOnboarding");
+}
+
+/* ---------- detección de pagos cíclicos al importar ---------- */
+var ciclicosDetectados=[];
+/* agrupa por concepto+importe; si aparecen en 2+ meses distintos con un intervalo regular
+   (~30/90/180/365 días), lo propone como recurrente */
+function detectarCiclicos(gastosNuevos){
+  var grupos={};
+  gastosNuevos.forEach(function(g){
+    var clave=g.concepto.trim().toLowerCase()+"|"+g.importe.toFixed(2);
+    (grupos[clave]=grupos[clave]||[]).push(g);
+  });
+  var candidatos=[];
+  Object.keys(grupos).forEach(function(k){
+    var arr=grupos[k].slice().sort(function(a,b){ return a.fecha<b.fecha?-1:1; });
+    if(arr.length<2) return;
+    var mesesUnicos=[...new Set(arr.map(function(g){ return mesDe(g.fecha); }))];
+    if(mesesUnicos.length<2) return;
+    var gaps=[];
+    for(var i=1;i<arr.length;i++){
+      gaps.push(Math.round((new Date(arr[i].fecha).getTime()-new Date(arr[i-1].fecha).getTime())/86400000));
+    }
+    var media=gaps.reduce(function(a,b){ return a+b; },0)/gaps.length;
+    var frecuencia=null;
+    if(media>=25 && media<=35) frecuencia="mensual";
+    else if(media>=80 && media<=100) frecuencia="trimestral";
+    else if(media>=170 && media<=190) frecuencia="semestral";
+    else if(media>=350 && media<=380) frecuencia="anual";
+    if(!frecuencia) return;
+    var ultimo=arr[arr.length-1];
+    candidatos.push({
+      concepto:ultimo.concepto, importe:ultimo.importe, categoria:ultimo.categoria,
+      frecuencia:frecuencia, dia:+ultimo.fecha.slice(8,10), mesInicio:mesDe(arr[0].fecha),
+      ocurrencias:arr.length
+    });
+  });
+  return candidatos;
+}
+function mostrarCiclicosDetectados(candidatos){
+  ciclicosDetectados=candidatos;
+  if(!candidatos.length) return;
+  $("txtCiclicos").textContent=t("ciclico.txt",{n:candidatos.length});
+  $("listaCiclicos").innerHTML=candidatos.map(function(c,i){
+    return '<div class="pg-rec-fila">'+
+      '<input type="checkbox" data-ciclico="'+i+'" checked>'+
+      '<div class="pg-rec-info"><div class="pg-rec-concepto">'+esc(c.concepto)+'</div>'+
+      '<div class="pg-rec-detalle">'+textoFrecuencia(c.frecuencia)+' · '+t("ciclico.vecesTpl",{n:c.ocurrencias})+'</div></div>'+
+      '<div class="pg-rec-importe">'+eur.format(c.importe)+'</div>'+
+      '</div>';
+  }).join("");
+  abrirModal("overlayCiclicos");
+}
+
 /* ---------- menú de usuario ---------- */
 function actualizarMenuUsuario(){
   var p = cargarPerfiles().filter(function(x){ return x.id===perfilActivoId; })[0];
@@ -1298,23 +1598,24 @@ function entrarPerfil(id){
   perfilActivoId=id;
   try{ localStorage.setItem(CLAVE_ACTIVO, id); }catch(e){}
   cargarEstado();
+  generarRecurrentesParaMes(mes);
   guardarEstado();
   cerrarModal("overlayPerfiles");
   aplicarIdioma();
   render();
 }
 function crearPerfilYEntrar(nombre,email){
-  var esPrimero = cargarPerfiles().length===0;
   var p = crearPerfil(nombre,email);
   perfilActivoId = p.id;
   try{ localStorage.setItem(CLAVE_ACTIVO, p.id); }catch(e){}
-  estado = esPrimero ? estadoDemo() : estadoVacio();
+  estado = estadoVacio();
   mes = mesDe(hoyISO());
   categoria = categoriaValidaPorDefecto();
   guardarEstado();
   cerrarModal("overlayPerfiles");
   aplicarIdioma();
   render();
+  mostrarOnboardingRecurrentes();
 }
 
 /* ---------- idioma: aplicar textos a la interfaz ---------- */
@@ -1343,6 +1644,7 @@ function aplicarIdioma(){
   $("guardar").textContent = t("btn.guardarGasto");
   $("tituloAhorro").firstChild.nodeValue = t("titulo.ahorro")+" ";
   $("lblOpcional").textContent = t("lbl.opcional");
+  $("btnRecurrentes").textContent = t("btn.recurrentes");
   $("lblIngresos").textContent = t("lbl.ingresos");
   $("lblPresupuesto").textContent = t("lbl.presupuesto");
   $("ingresos").placeholder = t("placeholder.decimal");
@@ -1369,6 +1671,30 @@ function aplicarIdioma(){
   $("nuevaCatNombre").placeholder = t("placeholder.categoria");
   $("anadirCategoria").textContent = t("btn.anadir");
   $("cerrarCategorias").textContent = t("btn.cerrar");
+  $("tituloRecurrentesModal").textContent = t("titulo.recurrentesModal");
+  $("lblRecConcepto").textContent = t("lbl.recConcepto");
+  $("lblRecImporte").textContent = t("lbl.recImporte");
+  $("recImporte").placeholder = t("placeholder.decimal");
+  $("lblRecTipo").textContent = t("lbl.recTipo");
+  $("optRecGasto").textContent = t("rec.gasto");
+  $("optRecIngreso").textContent = t("rec.ingreso");
+  $("lblRecFrecuencia").textContent = t("lbl.recFrecuencia");
+  $("optFrecMensual").textContent = t("frec.mensual");
+  $("optFrecTrimestral").textContent = t("frec.trimestral");
+  $("optFrecSemestral").textContent = t("frec.semestral");
+  $("optFrecAnual").textContent = t("frec.anual");
+  $("lblRecCategoria").textContent = t("lbl.recCategoria");
+  $("lblRecDia").textContent = t("lbl.recDia");
+  $("cancelarEdicionRecurrente").textContent = t("btn.cancelar");
+  $("cerrarRecurrentes").textContent = t("btn.cerrar");
+  $("tituloOnboarding").textContent = t("titulo.onboarding");
+  $("txtOnboarding").textContent = t("txt.onboarding");
+  $("guardarOnboarding").textContent = t("btn.guardarCambios");
+  $("omitirOnboarding").textContent = t("btn.omitir");
+  $("tituloCiclicos").textContent = t("titulo.ciclicos");
+  $("guardarCiclicos").textContent = t("btn.guardarCiclicos");
+  $("omitirCiclicos").textContent = t("btn.omitir");
+  if(!$("overlayRecurrentes").hidden){ renderListaRecurrentes(); renderSelectorCategoriaRecurrente(); limpiarFormRecurrente(); }
   $("tituloPerfiles").textContent = t("titulo.perfiles");
   $("lblNombrePerfil").textContent = t("lbl.nombre");
   $("nuevoPerfilNombre").placeholder = t("placeholder.nombre");
@@ -1417,6 +1743,7 @@ function inicializarEventos(){
     }
     var b=e.target.closest("[data-mes]"); if(!b) return;
     mes=b.getAttribute("data-mes");
+    generarRecurrentesParaMes(mes);
     if(!$("fecha").value || mesDe($("fecha").value)!==mes){
       $("fecha").value = (mes===mesDe(hoyISO())) ? hoyISO() : mes+"-01";
     }
@@ -1428,6 +1755,7 @@ function inicializarEventos(){
     if(!/^\d{4}-\d{2}$/.test(v)) return;
     if(estado.meses.indexOf(v)===-1){ estado.meses.push(v); }
     mes=v;
+    generarRecurrentesParaMes(mes);
     if(!$("fecha").value || mesDe($("fecha").value)!==mes){
       $("fecha").value = (mes===mesDe(hoyISO())) ? hoyISO() : mes+"-01";
     }
@@ -1499,7 +1827,9 @@ function inicializarEventos(){
         estado={
           gastos:d.gastos, presupuestos:d.presupuestos||{}, ingresos:d.ingresos||{}, meses:mesesRestaurados,
           categoriasPersonalizadas: Array.isArray(d.categoriasPersonalizadas) ? d.categoriasPersonalizadas : [],
-          categoriasEliminadas: Array.isArray(d.categoriasEliminadas) ? d.categoriasEliminadas : []
+          categoriasEliminadas: Array.isArray(d.categoriasEliminadas) ? d.categoriasEliminadas : [],
+          recurrentes: Array.isArray(d.recurrentes) ? d.recurrentes : [],
+          recurrentesGenerados: (d.recurrentesGenerados && typeof d.recurrentesGenerados==="object") ? d.recurrentesGenerados : {}
         };
         mes = mesesRestaurados.length ? mesesRestaurados.slice().sort()[mesesRestaurados.length-1] : mes;
         categoria = categoriaValidaPorDefecto();
@@ -1642,21 +1972,117 @@ function inicializarEventos(){
     var incluidas = filasPendientes.filter(function(f){ return f.incluir; });
     var validas = incluidas.filter(function(f){ return f.fecha && isFinite(f.importe) && f.importe>0; });
     if(!validas.length){ $("errorImportarModal").textContent=t("import.errorVacio"); return; }
-    validas.forEach(function(f){
-      estado.gastos.push({
+    var gastosNuevos = validas.map(function(f){
+      var g={
         id: Date.now()+"-"+Math.random().toString(36).slice(2,7),
         concepto: (f.concepto||"").trim() || t("import.sinConcepto"),
         importe: Math.round(f.importe*100)/100,
         categoria: f.categoria || "otros",
         fecha: f.fecha
-      });
+      };
+      estado.gastos.push(g);
+      return g;
     });
     guardarEstado();
     mes = validas[validas.length-1].fecha.slice(0,7);
     cerrarModal("overlayImportar");
     $("textoImportar").value="";
     render();
+    mostrarCiclicosDetectados(detectarCiclicos(gastosNuevos));
   });
+
+  /* pagos recurrentes */
+  $("btnRecurrentes").addEventListener("click", function(){
+    renderListaRecurrentes();
+    renderSelectorCategoriaRecurrente();
+    limpiarFormRecurrente();
+    abrirModal("overlayRecurrentes");
+  });
+  $("cerrarRecurrentes").addEventListener("click", function(){ cerrarModal("overlayRecurrentes"); });
+  $("overlayRecurrentes").addEventListener("click", function(e){
+    if(e.target===$("overlayRecurrentes")) cerrarModal("overlayRecurrentes");
+  });
+  $("recTipo").addEventListener("change", actualizarVisibilidadCategoriaRecurrente);
+  $("listaRecurrentes").addEventListener("click", function(e){
+    var editar=e.target.closest("[data-editarrec]");
+    if(editar){
+      var rec=(estado.recurrentes||[]).filter(function(r){ return r.id===editar.getAttribute("data-editarrec"); })[0];
+      if(rec) cargarFormRecurrente(rec);
+      return;
+    }
+    var borrar=e.target.closest("[data-borrarrec]");
+    if(borrar){
+      var id=borrar.getAttribute("data-borrarrec");
+      var rec2=(estado.recurrentes||[]).filter(function(r){ return r.id===id; })[0];
+      if(rec2 && confirm(t("rec.confirmarBorrar",{nombre:rec2.concepto}))){
+        eliminarRecurrente(id);
+        if(recurrenteEditandoId===id) limpiarFormRecurrente();
+        renderListaRecurrentes();
+      }
+    }
+  });
+  $("cancelarEdicionRecurrente").addEventListener("click", limpiarFormRecurrente);
+  $("guardarRecurrente").addEventListener("click", function(){
+    var concepto=$("recConcepto").value.trim();
+    var n=aNumero($("recImporte").value);
+    var dia=Math.max(1, Math.min(28, +$("recDia").value||1));
+    if(!concepto){ $("errorRecurrente").textContent=t("rec.errorConcepto"); return; }
+    if(!isFinite(n) || n<=0){ $("errorRecurrente").textContent=t("error.importe"); return; }
+    var datos={
+      tipo:$("recTipo").value, concepto:concepto, importe:Math.round(n*100)/100,
+      categoria:$("recCategoria").value, frecuencia:$("recFrecuencia").value, dia:dia
+    };
+    if(recurrenteEditandoId){
+      actualizarRecurrente(recurrenteEditandoId, datos);
+    }else{
+      datos.mesInicio=mes;
+      agregarRecurrente(datos);
+    }
+    renderListaRecurrentes();
+    limpiarFormRecurrente();
+    render();
+  });
+
+  /* onboarding de recurrentes al crear perfil */
+  $("listaOnboarding").addEventListener("change", function(e){
+    var chk=e.target.closest("[data-preset]"); if(!chk) return;
+    var inp=document.querySelector('[data-preset-importe="'+chk.getAttribute("data-preset")+'"]');
+    inp.hidden=!chk.checked;
+    if(chk.checked) inp.focus();
+  });
+  $("guardarOnboarding").addEventListener("click", function(){
+    PRESETS_ONBOARDING.forEach(function(p){
+      var chk=document.querySelector('[data-preset="'+p.id+'"]');
+      if(!chk || !chk.checked) return;
+      var inp=document.querySelector('[data-preset-importe="'+p.id+'"]');
+      var n=aNumero(inp.value);
+      if(!isFinite(n) || n<=0) return;
+      agregarRecurrente({
+        tipo:p.tipo, concepto:t("preset."+p.id), importe:Math.round(n*100)/100,
+        categoria:p.categoria, frecuencia:p.frecuencia, dia:1, mesInicio:mes
+      });
+    });
+    cerrarModal("overlayOnboarding");
+    render();
+  });
+  $("omitirOnboarding").addEventListener("click", function(){ cerrarModal("overlayOnboarding"); });
+
+  /* pagos cíclicos detectados al importar */
+  $("guardarCiclicos").addEventListener("click", function(){
+    var seleccionados = ciclicosDetectados.filter(function(c,i){
+      var chk=document.querySelector('[data-ciclico="'+i+'"]');
+      return chk && chk.checked;
+    });
+    seleccionados.forEach(function(c){
+      agregarRecurrente({
+        tipo:"gasto", concepto:c.concepto, importe:c.importe, categoria:c.categoria,
+        frecuencia:c.frecuencia, dia:c.dia, mesInicio:c.mesInicio
+      });
+    });
+    cerrarModal("overlayCiclicos");
+    render();
+  });
+  $("omitirCiclicos").addEventListener("click", function(){ cerrarModal("overlayCiclicos"); });
 }
 
 /* ---------- arranque ---------- */
