@@ -1,4 +1,4 @@
-var CACHE = "panel-gastos-v1";
+var CACHE = "panel-gastos-v2";
 var ASSETS = [
   "./panel-gastos.html",
   "./manifest.json",
@@ -21,16 +21,17 @@ self.addEventListener("activate", function(e){
   self.clients.claim();
 });
 
+/* red primero: siempre intenta traer la versión más reciente; si no hay conexión,
+   sirve la última copia guardada. Así nunca se queda pegado a una versión antigua. */
 self.addEventListener("fetch", function(e){
   if (e.request.method !== "GET") return;
   e.respondWith(
-    caches.match(e.request).then(function(cached){
-      var network = fetch(e.request).then(function(resp){
-        var copy = resp.clone();
-        caches.open(CACHE).then(function(c){ c.put(e.request, copy); });
-        return resp;
-      }).catch(function(){ return cached; });
-      return cached || network;
+    fetch(e.request).then(function(resp){
+      var copy = resp.clone();
+      caches.open(CACHE).then(function(c){ c.put(e.request, copy); });
+      return resp;
+    }).catch(function(){
+      return caches.match(e.request);
     })
   );
 });
