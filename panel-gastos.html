@@ -353,8 +353,7 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
 
     <div class="pg-card">
       <h2 class="pg-tit" id="tituloAhorro">Ahorro <span id="lblOpcional">opcional</span>
-        <button class="pg-link" id="btnRecurrentes" type="button" style="margin-left:auto"></button>
-        <button class="pg-colapsar" type="button" data-colapsar="cuerpoAhorro" aria-expanded="true" aria-label=""></button>
+        <button class="pg-colapsar" type="button" data-colapsar="cuerpoAhorro" aria-expanded="true" aria-label="" style="margin-left:auto"></button>
       </h2>
       <div id="cuerpoAhorro">
         <div class="pg-fila pg-campo">
@@ -378,6 +377,59 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
       </div>
     </div>
 
+  </div>
+
+  <div class="pg-card" id="cardRecurrentes" style="margin-top:22px">
+    <h2 class="pg-tit"><span id="tituloRecurrentesModal">Pagos recurrentes</span>
+      <button class="pg-colapsar" type="button" data-colapsar="cuerpoRecurrentes" aria-expanded="false" aria-label="" style="margin-left:auto"></button>
+    </h2>
+    <div id="cuerpoRecurrentes" hidden>
+      <div class="pg-catlista" id="listaRecurrentes" style="max-height:none"></div>
+      <p id="txtRecurrentesInfo" style="font-size:11.5px;color:var(--tinta2);margin:2px 0 16px"></p>
+      <h4 id="tituloFormRecurrente" style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--tinta2);margin:0 0 10px;font-weight:600"></h4>
+      <div class="pg-fila pg-campo">
+        <div>
+          <label class="pg-lab" id="lblRecConcepto" for="recConcepto">Concepto</label>
+          <input id="recConcepto" class="pg-in" maxlength="60" autocomplete="off">
+        </div>
+        <div>
+          <label class="pg-lab" id="lblRecImporte" for="recImporte">Importe (€)</label>
+          <input id="recImporte" class="pg-in pg-in--num" inputmode="decimal" placeholder="0,00">
+        </div>
+      </div>
+      <div class="pg-fila pg-campo">
+        <div>
+          <label class="pg-lab" id="lblRecTipo" for="recTipo">Tipo</label>
+          <select id="recTipo" class="pg-in">
+            <option value="gasto" id="optRecGasto"></option>
+            <option value="ingreso" id="optRecIngreso"></option>
+          </select>
+        </div>
+        <div>
+          <label class="pg-lab" id="lblRecFrecuencia" for="recFrecuencia">Frecuencia</label>
+          <select id="recFrecuencia" class="pg-in">
+            <option value="semanal" id="optFrecSemanal"></option>
+            <option value="mensual" id="optFrecMensual"></option>
+            <option value="trimestral" id="optFrecTrimestral"></option>
+            <option value="semestral" id="optFrecSemestral"></option>
+            <option value="anual" id="optFrecAnual"></option>
+          </select>
+        </div>
+      </div>
+      <div class="pg-fila pg-campo">
+        <div id="wrapRecCategoria">
+          <label class="pg-lab" id="lblRecCategoria" for="recCategoria">Categoría</label>
+          <select id="recCategoria" class="pg-in"></select>
+        </div>
+        <div>
+          <label class="pg-lab" id="lblRecFecha" for="recFecha">Próximo pago</label>
+          <input id="recFecha" type="date" class="pg-in pg-in--num">
+        </div>
+      </div>
+      <button class="pg-btn" id="guardarRecurrente" type="button"></button>
+      <button class="pg-link" id="cancelarEdicionRecurrente" type="button" hidden style="margin-top:8px"></button>
+      <p class="pg-error" id="errorRecurrente"></p>
+    </div>
   </div>
 
   <div class="pg-grid-inferior">
@@ -469,56 +521,6 @@ html,body{margin:0;padding:0;background:#EEF1EC;}
     </div>
   </div>
 
-  <div class="pg-overlay" id="overlayRecurrentes" hidden>
-    <div class="pg-modal pg-modal--ancho">
-      <h3 id="tituloRecurrentesModal">Pagos recurrentes</h3>
-      <div class="pg-catlista" id="listaRecurrentes"></div>
-      <h4 id="tituloFormRecurrente" style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--tinta2);margin:16px 0 10px;font-weight:600"></h4>
-      <div class="pg-fila pg-campo">
-        <div>
-          <label class="pg-lab" id="lblRecConcepto" for="recConcepto">Concepto</label>
-          <input id="recConcepto" class="pg-in" maxlength="60" autocomplete="off">
-        </div>
-        <div>
-          <label class="pg-lab" id="lblRecImporte" for="recImporte">Importe (€)</label>
-          <input id="recImporte" class="pg-in pg-in--num" inputmode="decimal" placeholder="0,00">
-        </div>
-      </div>
-      <div class="pg-fila pg-campo">
-        <div>
-          <label class="pg-lab" id="lblRecTipo" for="recTipo">Tipo</label>
-          <select id="recTipo" class="pg-in">
-            <option value="gasto" id="optRecGasto"></option>
-            <option value="ingreso" id="optRecIngreso"></option>
-          </select>
-        </div>
-        <div>
-          <label class="pg-lab" id="lblRecFrecuencia" for="recFrecuencia">Frecuencia</label>
-          <select id="recFrecuencia" class="pg-in">
-            <option value="semanal" id="optFrecSemanal"></option>
-            <option value="mensual" id="optFrecMensual"></option>
-            <option value="trimestral" id="optFrecTrimestral"></option>
-            <option value="semestral" id="optFrecSemestral"></option>
-            <option value="anual" id="optFrecAnual"></option>
-          </select>
-        </div>
-      </div>
-      <div class="pg-fila pg-campo">
-        <div id="wrapRecCategoria">
-          <label class="pg-lab" id="lblRecCategoria" for="recCategoria">Categoría</label>
-          <select id="recCategoria" class="pg-in"></select>
-        </div>
-        <div>
-          <label class="pg-lab" id="lblRecFecha" for="recFecha">Próximo pago</label>
-          <input id="recFecha" type="date" class="pg-in pg-in--num">
-        </div>
-      </div>
-      <button class="pg-btn" id="guardarRecurrente" type="button"></button>
-      <button class="pg-link" id="cancelarEdicionRecurrente" type="button" hidden style="margin-top:8px"></button>
-      <p class="pg-error" id="errorRecurrente"></p>
-      <button class="pg-link" id="cerrarRecurrentes" type="button" style="margin-top:12px"></button>
-    </div>
-  </div>
 
   <div class="pg-overlay" id="overlayOnboarding" hidden>
     <div class="pg-modal pg-modal--ancho">
@@ -626,6 +628,7 @@ var I18N = {
     "rec.vacio":"No tienes pagos ni ingresos recurrentes configurados todavía.",
     "rec.tituloNuevo":"Añadir nuevo",
     "rec.tituloEditar":"Editar pago recurrente",
+    "rec.info":"Al editar o crear un pago recurrente, el cambio solo afecta a partir de su próximo pago programado — los gastos ya generados en meses anteriores no se tocan.",
     "rec.errorConcepto":"Escribe un concepto.",
     "rec.errorFecha":"Elige la fecha del próximo pago.",
     "btn.anadirOtro":"+ Añadir otro pago",
@@ -721,6 +724,7 @@ var I18N = {
     "rec.vacio":"You don't have any recurring payments or income set up yet.",
     "rec.tituloNuevo":"Add new",
     "rec.tituloEditar":"Edit recurring payment",
+    "rec.info":"Editing or creating a recurring payment only affects its next scheduled payment onward — expenses already generated in past months stay as they are.",
     "rec.errorConcepto":"Enter a description.",
     "rec.errorFecha":"Pick the date of the next payment.",
     "btn.anadirOtro":"+ Add another payment",
@@ -1313,6 +1317,10 @@ function render(){
       '<div class="pg-pie" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linea);font-weight:700;color:var(--pino)"><span>'+t("ahorro.boteAcumulado")+'</span><span class="pg-mono">'+eur.format(bote)+'</span></div>'+
     '</div>'
     : '<p class="pg-vacio">'+t("ahorro.vacio")+'</p>';
+
+  /* lista de pagos recurrentes: se refresca aquí también por si se acaban de generar
+     movimientos automáticamente (cambia su "próximo pago") */
+  renderListaRecurrentes();
 }
 
 /* suma de (ingreso - gastado) en cada mes donde se haya indicado un ingreso */
@@ -1955,7 +1963,6 @@ function aplicarIdioma(){
   $("guardar").textContent = t("btn.guardarGasto");
   $("tituloAhorro").firstChild.nodeValue = t("titulo.ahorro")+" ";
   $("lblOpcional").textContent = t("lbl.opcional");
-  $("btnRecurrentes").textContent = t("btn.recurrentes");
   $("lblIngresos").textContent = t("lbl.ingresos");
   $("lblPresupuesto").textContent = t("lbl.presupuesto");
   $("lblFijarTodos").textContent = t("lbl.fijarTodos");
@@ -1999,7 +2006,7 @@ function aplicarIdioma(){
   $("lblRecCategoria").textContent = t("lbl.recCategoria");
   $("lblRecFecha").textContent = t("lbl.recFecha");
   $("cancelarEdicionRecurrente").textContent = t("btn.cancelar");
-  $("cerrarRecurrentes").textContent = t("btn.cerrar");
+  $("txtRecurrentesInfo").textContent = t("rec.info");
   $("tituloOnboarding").textContent = t("titulo.onboarding");
   $("txtOnboarding").textContent = t("txt.onboarding");
   $("anadirOnbPersonalizado").textContent = t("btn.anadirOtro");
@@ -2008,7 +2015,8 @@ function aplicarIdioma(){
   $("tituloCiclicos").textContent = t("titulo.ciclicos");
   $("guardarCiclicos").textContent = t("btn.guardarCiclicos");
   $("omitirCiclicos").textContent = t("btn.omitir");
-  if(!$("overlayRecurrentes").hidden){ renderListaRecurrentes(); renderSelectorCategoriaRecurrente(); limpiarFormRecurrente(); }
+  renderListaRecurrentes(); renderSelectorCategoriaRecurrente();
+  if(!$("cuerpoRecurrentes").hidden && !recurrenteEditandoId) limpiarFormRecurrente();
   $("tituloPerfiles").textContent = t("titulo.perfiles");
   $("lblNombrePerfil").textContent = t("lbl.nombre");
   $("nuevoPerfilNombre").placeholder = t("placeholder.nombre");
@@ -2425,17 +2433,9 @@ function inicializarEventos(){
     mostrarCiclicosDetectados(candidatosCiclicos);
   });
 
-  /* pagos recurrentes */
-  $("btnRecurrentes").addEventListener("click", function(){
-    renderListaRecurrentes();
-    renderSelectorCategoriaRecurrente();
-    limpiarFormRecurrente();
-    abrirModal("overlayRecurrentes");
-  });
-  $("cerrarRecurrentes").addEventListener("click", function(){ cerrarModal("overlayRecurrentes"); });
-  $("overlayRecurrentes").addEventListener("click", function(e){
-    if(e.target===$("overlayRecurrentes")) cerrarModal("overlayRecurrentes");
-  });
+  /* pagos recurrentes: la tarjeta es una sección normal de la página (no un modal),
+     así que solo hace falta inicializar su formulario la primera vez */
+  limpiarFormRecurrente();
   $("recTipo").addEventListener("change", actualizarVisibilidadCategoriaRecurrente);
   $("listaRecurrentes").addEventListener("click", function(e){
     var editar=e.target.closest("[data-editarrec]");
