@@ -303,6 +303,8 @@ html[data-tema="oscuro"] .pg{
   pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/6.2.108/pdf.worker.min.mjs";
   window.pdfjsLib = pdfjsLib;
 </script>
+<!-- SheetJS: lee hojas de cálculo (XLSX/XLS) en el navegador, sin backend propio. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 <div class="pg">
@@ -449,7 +451,7 @@ html[data-tema="oscuro"] .pg{
         style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;resize:vertical"></textarea>
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
         <button class="pg-btn pg-btn--sec" id="subirFichero" type="button"></button>
-        <input type="file" id="ficheroImportar" accept=".csv,.txt,application/pdf,.pdf" multiple hidden>
+        <input type="file" id="ficheroImportar" accept=".csv,.txt,.xlsx,.xls,application/pdf,.pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" multiple hidden>
         <button class="pg-btn" id="analizarImportar" type="button" style="flex:1"></button>
       </div>
       <p class="pg-error" id="errorImportar"></p>
@@ -663,7 +665,7 @@ var I18N = {
     "titulo.seccionAnadir":"Añadir movimientos","titulo.seccionDetalle":"Detalle del mes",
     "btn.vaciarMes":"Vaciar {{mes}}","btn.descargar":"Descargar copia","btn.restaurar":"Restaurar copia",
     "titulo.importar":"Importar movimientos",
-    "txt.importarInfo":"Pega el texto de tu banco o sube ficheros CSV, TXT o PDF. Podrás revisar y marcar cada línea antes de guardar; las transferencias entre cuentas se detectan solas.",
+    "txt.importarInfo":"Pega el texto de tu banco o sube ficheros CSV, TXT, XLSX o PDF, aunque las columnas no vengan en el mismo orden. Podrás revisar y marcar cada línea antes de guardar; las transferencias entre cuentas se detectan solas.",
     "placeholder.importar":"15/03/2026  Compra supermercado  -42,10€\n16/03/2026  Nómina  +1800,00€",
     "btn.subirFichero":"Subir fichero(s)","btn.analizar":"Analizar","titulo.revisar":"Revisa los movimientos",
     "import.transferencia":"Posible transferencia — excluida",
@@ -765,7 +767,7 @@ var I18N = {
     "titulo.seccionAnadir":"Add transactions","titulo.seccionDetalle":"Month detail",
     "btn.vaciarMes":"Clear {{mes}}","btn.descargar":"Download backup","btn.restaurar":"Restore backup",
     "titulo.importar":"Import transactions",
-    "txt.importarInfo":"Paste text from your bank or upload CSV, TXT or PDF files. You'll review and check each line before saving; transfers between accounts are detected automatically.",
+    "txt.importarInfo":"Paste text from your bank or upload CSV, TXT, XLSX or PDF files, even if the columns aren't in the same order. You'll review and check each line before saving; transfers between accounts are detected automatically.",
     "placeholder.importar":"15/03/2026  Grocery store  -42.10€\n16/03/2026  Paycheck  +1800.00€",
     "btn.subirFichero":"Upload file(s)","btn.analizar":"Analyze","titulo.revisar":"Review the transactions",
     "import.transferencia":"Possible transfer — excluded",
@@ -1727,44 +1729,106 @@ function extraerTextoDePDF(file){
     }, Promise.resolve([]));
   }).then(function(lineas){ return lineas.join("\n"); });
 }
+/* hoja de cálculo (XLSX/XLS): cada hoja se pasa a texto separado por tabuladores y se reutiliza
+   el mismo detector de columnas que para CSV/TXT (así toleramos el mismo desorden de columnas) */
+function extraerTextoDeXLSX(file){
+  if(!window.XLSX) return Promise.reject(new Error("sin xlsx"));
+  return file.arrayBuffer().then(function(buffer){
+    var libro=XLSX.read(new Uint8Array(buffer),{type:"array"});
+    return libro.SheetNames.map(function(nombre){
+      return XLSX.utils.sheet_to_csv(libro.Sheets[nombre],{FS:"\t"});
+    }).join("\n");
+  });
+}
+/* reconoce columnas de fecha/importe/concepto sin asumir un orden fijo: puntúa cada columna
+   por cuánto "parece" lo que buscamos y, si hay cabecera, suma puntos por su nombre
+   (así toleramos columnas de más, en cualquier orden, típicas de exportar distintos bancos) */
+var PALABRAS_CAB_FECHA=["fecha","date","dia"];
+var PALABRAS_CAB_IMPORTE=["importe","amount","cantidad","monto"];
+var PALABRAS_CAB_CONCEPTO=["concepto","descripcion","detalle","movimiento","beneficiario","comercio","memo"];
+var PALABRAS_CAB_EVITAR_IMPORTE=["saldo","balance"];
+function sinAcentos(s){
+  return String(s||"").toLowerCase()
+    .replace(/[áàäâ]/g,"a").replace(/[éèëê]/g,"e").replace(/[íìïî]/g,"i")
+    .replace(/[óòöô]/g,"o").replace(/[úùüû]/g,"u").replace(/ñ/g,"n");
+}
+function cabeceraContiene(cab,palabras){
+  var h=sinAcentos(cab);
+  return palabras.some(function(p){ return h.indexOf(p)>-1; });
+}
+function analizarTabla(tablas){
+  if(!tablas.length) return [];
+  var cabecera=tablas[0];
+  var esCabecera = !pareceFecha(cabecera[0]) && !cabecera.some(pareceImporte);
+  var inicio = esCabecera ? 1 : 0;
+  if(tablas.length<=inicio) return [];
+  var nCols = tablas.slice(inicio).reduce(function(m,f){ return Math.max(m,f.length); },0);
+  var muestra = tablas.slice(inicio, inicio+Math.min(20,tablas.length-inicio));
+
+  var idxFecha=-1, puntFecha=0, c;
+  for(c=0;c<nCols;c++){
+    var pf=muestra.filter(function(f){ return pareceFecha(f[c]); }).length;
+    if(pf===0) continue;
+    var bf = esCabecera && cabeceraContiene(cabecera[c],PALABRAS_CAB_FECHA) && !cabeceraContiene(cabecera[c],["valor"]) ? 1000 : 0;
+    if(pf+bf>puntFecha){ puntFecha=pf+bf; idxFecha=c; }
+  }
+  var idxImporte=-1, puntImporte=0;
+  for(c=0;c<nCols;c++){
+    if(c===idxFecha) continue;
+    var pi=muestra.filter(function(f){ return pareceImporte(f[c]); }).length;
+    if(pi===0) continue;
+    var esSaldo = esCabecera && cabeceraContiene(cabecera[c],PALABRAS_CAB_EVITAR_IMPORTE);
+    var bi = esCabecera && cabeceraContiene(cabecera[c],PALABRAS_CAB_IMPORTE) ? 1000 : (esSaldo ? -500 : 0);
+    if(pi+bi>puntImporte){ puntImporte=pi+bi; idxImporte=c; }
+  }
+  if(idxImporte===-1) return [];
+  var idxConcepto=-1, puntConcepto=-1;
+  for(c=0;c<nCols;c++){
+    if(c===idxFecha || c===idxImporte) continue;
+    var letras=0, celdas=0;
+    muestra.forEach(function(f){
+      var v=String(f[c]||"").trim(); if(!v) return;
+      celdas++; letras+=(v.match(/[a-zA-ZÀ-ÿ]/g)||[]).length;
+    });
+    if(celdas===0) continue;
+    var bcpt = esCabecera && cabeceraContiene(cabecera[c],PALABRAS_CAB_CONCEPTO) ? 1000 : 0;
+    var puntTotal = letras/celdas + bcpt;
+    if(puntTotal>puntConcepto){ puntConcepto=puntTotal; idxConcepto=c; }
+  }
+
+  var filas=[];
+  for(var r=inicio;r<tablas.length;r++){
+    var f=tablas[r];
+    if(!f[idxImporte]) continue;
+    var info=normalizarImporte(f[idxImporte]);
+    if(!info) continue;
+    var fecha = (idxFecha>-1 && f[idxFecha]) ? normalizarFecha(f[idxFecha]) : null;
+    if(!fecha) fecha=hoyISO();
+    filas.push({
+      fecha:fecha, concepto:(idxConcepto>-1?f[idxConcepto]:"").slice(0,80)||t("import.sinConcepto"),
+      importe:info.valor, incluir:info.esGasto, esGasto:info.esGasto, categoria:"otros", transferencia:false
+    });
+  }
+  return filas;
+}
 function analizarTexto(txt){
   var lineas=txt.split(/\r?\n/).map(function(l){ return l.trim(); }).filter(Boolean);
   if(!lineas.length) return [];
   var delim=null;
   ["\t",";",","].forEach(function(d){
     if(delim) return;
-    var cuenta=lineas[0].split(d).length;
-    if(cuenta>=3 && lineas.slice(0,Math.min(5,lineas.length)).every(function(l){ return l.split(d).length===cuenta; })){
-      delim=d;
-    }
+    var muestraN=Math.min(10,lineas.length);
+    var conteos=lineas.slice(0,muestraN).map(function(l){ return l.split(d).length; });
+    var frecuencias={};
+    conteos.forEach(function(n){ frecuencias[n]=(frecuencias[n]||0)+1; });
+    var modaN=0, modaFrec=0;
+    Object.keys(frecuencias).forEach(function(n){ if(frecuencias[n]>modaFrec){ modaFrec=frecuencias[n]; modaN=+n; } });
+    if(modaN>=3 && modaFrec/muestraN>=0.6) delim=d;
   });
   var filas=[];
   if(delim){
     var tablas=lineas.map(function(l){ return l.split(delim).map(function(c){ return c.trim().replace(/^"|"$/g,""); }); });
-    var inicio = (!pareceFecha(tablas[0][0]) && !tablas[0].some(pareceImporte)) ? 1 : 0;
-    if(tablas.length<=inicio) return [];
-    var muestra=tablas.slice(inicio, inicio+5);
-    var idxFecha=-1, idxImporte=-1, idxConcepto=-1, c;
-    for(c=0;c<tablas[inicio].length;c++){
-      if(idxFecha===-1 && muestra.every(function(f){ return pareceFecha(f[c]); })) idxFecha=c;
-    }
-    for(c=0;c<tablas[inicio].length;c++){
-      if(idxImporte===-1 && c!==idxFecha && muestra.some(function(f){ return pareceImporte(f[c]); })) idxImporte=c;
-    }
-    for(c=0;c<tablas[inicio].length;c++){
-      if(c!==idxFecha && c!==idxImporte){ idxConcepto=c; break; }
-    }
-    for(var r=inicio;r<tablas.length;r++){
-      var f=tablas[r];
-      if(idxFecha===-1 || idxImporte===-1 || !f[idxFecha] || !f[idxImporte]) continue;
-      var fecha=normalizarFecha(f[idxFecha]);
-      var info=normalizarImporte(f[idxImporte]);
-      if(!fecha || !info) continue;
-      filas.push({
-        fecha:fecha, concepto:(idxConcepto>-1?f[idxConcepto]:"").slice(0,80)||t("import.sinConcepto"),
-        importe:info.valor, incluir:info.esGasto, esGasto:info.esGasto, categoria:"otros", transferencia:false
-      });
-    }
+    filas=analizarTabla(tablas);
   }else{
     lineas.forEach(function(l){
       var mf=l.match(/\d{1,4}[\/\-.]\d{1,2}[\/\-.]\d{1,4}/);
@@ -2690,6 +2754,10 @@ function inicializarEventos(){
       var esPDF = f.type==="application/pdf" || /\.pdf$/i.test(f.name);
       if(esPDF){
         return extraerTextoDePDF(f).catch(function(){ return ""; });
+      }
+      var esXLSX = /\.xlsx?$/i.test(f.name) || /spreadsheetml|ms-excel/.test(f.type);
+      if(esXLSX){
+        return extraerTextoDeXLSX(f).catch(function(){ return ""; });
       }
       return new Promise(function(resolve){
         var lector=new FileReader();
