@@ -1659,19 +1659,28 @@ function anadir(){
 /* ---------- importación de movimientos ---------- */
 var filasPendientes=[];
 
-function pareceFecha(s){ return /^\d{1,4}[\/\-.]\d{1,2}[\/\-.]\d{1,4}$/.test(String(s||"").trim()); }
+function pareceFecha(s){ return /^\d{1,4}[\/\-.]{1,2}\d{1,2}[\/\-.]{1,2}\d{1,4}$/.test(String(s||"").trim()); }
 function pareceImporte(s){
   var v=String(s||"").trim();
   return /\d/.test(v) && /^[+-]?\d+([.,]\d{3})*([.,]\d{1,2})?\s*€?$/.test(v);
 }
+/* valida que año/mes/día formen una fecha real (usando el "recalculo" de Date: si month/día
+   se salen de rango, la fecha construida no coincide con lo pedido); una fecha rota o con un
+   separador raro (typos, extracción de PDF imperfecta) se descarta en vez de colarse mal */
+function validarFechaISO(anio,mes,dia){
+  if(mes<1||mes>12||dia<1||dia>31) return null;
+  var fecha=new Date(anio,mes-1,dia);
+  if(fecha.getFullYear()!==anio || fecha.getMonth()!==mes-1 || fecha.getDate()!==dia) return null;
+  return anio+"-"+p2(mes)+"-"+p2(dia);
+}
 function normalizarFecha(s){
   var v=String(s).trim();
-  var m=v.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);
-  if(m) return m[1]+"-"+p2(+m[2])+"-"+p2(+m[3]);
-  m=v.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  var m=v.match(/^(\d{4})[\/\-.]{1,2}(\d{1,2})[\/\-.]{1,2}(\d{1,2})$/);
+  if(m) return validarFechaISO(+m[1],+m[2],+m[3]);
+  m=v.match(/^(\d{1,2})[\/\-.]{1,2}(\d{1,2})[\/\-.]{1,2}(\d{2,4})$/);
   if(m){
     var a=+m[3]; if(a<100) a+=2000;
-    return a+"-"+p2(+m[2])+"-"+p2(+m[1]);
+    return validarFechaISO(a,+m[2],+m[1]);
   }
   return null;
 }
@@ -1697,8 +1706,65 @@ function normalizarImporte(s){
   if(!isFinite(n)) return null;
   return {valor: Math.round(n*100)/100, esGasto: neg ? true : esGasto};
 }
-/* extrae el texto de un PDF (extracto bancario) reconstruyendo líneas por posición: agrupa los
-   fragmentos de texto que comparten una altura (Y) parecida, y los ordena de izquierda a derecha */
+/* reconstruye las líneas de una página de PDF intentando conservar las columnas de una tabla:
+   agrupa los fragmentos de texto por altura (Y), y para separar columnas busca huecos
+   horizontales grandes entre fragmentos consecutivos. Esos huecos se agrupan entre varias
+   líneas para fijar unos límites de columna comunes a toda la tabla (en vez de solo mirar
+   la línea actual), así una celda vacía en medio de una fila no desplaza el resto de columnas
+   -algo habitual en extractos con importes separados en "cargo"/"abono" o "paid in"/"paid out" */
+function reconstruirLineasPDF(items){
+  items = items.filter(function(it){ return it.str && it.str.trim(); });
+  if(!items.length) return [];
+  var filas=[];
+  items.forEach(function(item){
+    var y=item.transform[5];
+    var fila=filas.filter(function(f){ return Math.abs(f.y-y)<=2; })[0];
+    if(!fila){ fila={y:y,items:[]}; filas.push(fila); }
+    fila.items.push(item);
+  });
+  filas.sort(function(a,b){ return b.y-a.y; });
+  filas.forEach(function(f){ f.items.sort(function(a,b){ return a.transform[4]-b.transform[4]; }); });
+
+  /* se usa el inicio (x) del fragmento que viene DESPUÉS del hueco, no el punto medio: el
+     principio de una columna es estable de una fila a otra (alineado a la izquierda), mientras
+     que el punto medio del hueco varía según lo larga que sea la celda anterior en cada fila */
+  var huecos=[];
+  filas.forEach(function(f){
+    for(var i=1;i<f.items.length;i++){
+      var ant=f.items[i-1], act=f.items[i];
+      var finAnt=ant.transform[4]+(ant.width||0);
+      var hueco=act.transform[4]-finAnt;
+      var anchoChar = ant.str.length ? (ant.width||0)/ant.str.length : 4;
+      if(hueco>Math.max(anchoChar*2.2,6)) huecos.push(act.transform[4]);
+    }
+  });
+  huecos.sort(function(a,b){ return a-b; });
+  var fronteras=[];
+  huecos.forEach(function(x){
+    var f=fronteras[fronteras.length-1];
+    if(f && x-f.suma/f.n<10){ f.suma+=x; f.n++; }
+    else fronteras.push({suma:x,n:1});
+  });
+  /* no exigimos que un límite aparezca en varias líneas: en un extracto con columnas de
+     cargo/abono separadas, una fila normal solo tiene valor en una de las dos, así que el
+     límite entre esas dos columnas puede no repetirse más que en la cabecera */
+  fronteras = fronteras.map(function(f){ return f.suma/f.n; });
+
+  if(!fronteras.length){
+    return filas.map(function(f){
+      return f.items.map(function(it){ return it.str; }).join(" ").replace(/\s+/g," ").trim();
+    }).filter(Boolean);
+  }
+  return filas.map(function(f){
+    var celdas=[]; for(var i=0;i<=fronteras.length;i++) celdas.push("");
+    f.items.forEach(function(it){
+      var x=it.transform[4], col=0;
+      while(col<fronteras.length && x>=fronteras[col]) col++;
+      celdas[col] = celdas[col] ? celdas[col]+" "+it.str : it.str;
+    });
+    return celdas.map(function(c){ return c.trim(); }).join("\t");
+  }).filter(function(l){ return l.replace(/\t/g,"").trim(); });
+}
 function extraerTextoDePDF(file){
   if(!window.pdfjsLib) return Promise.reject(new Error("sin pdfjs"));
   return file.arrayBuffer().then(function(buffer){
@@ -1711,19 +1777,7 @@ function extraerTextoDePDF(file){
         return pdf.getPage(n).then(function(pagina){
           return pagina.getTextContent();
         }).then(function(contenido){
-          var filas=[];
-          contenido.items.forEach(function(item){
-            var y=item.transform[5];
-            var fila=filas.filter(function(f){ return Math.abs(f.y-y)<=2; })[0];
-            if(!fila){ fila={y:y,items:[]}; filas.push(fila); }
-            fila.items.push(item);
-          });
-          filas.sort(function(a,b){ return b.y-a.y; });
-          var lineas=filas.map(function(f){
-            return f.items.sort(function(a,b){ return a.transform[4]-b.transform[4]; })
-              .map(function(it){ return it.str; }).join(" ").replace(/\s+/g," ").trim();
-          }).filter(Boolean);
-          return lineasAcum.concat(lineas);
+          return lineasAcum.concat(reconstruirLineasPDF(contenido.items));
         });
       });
     }, Promise.resolve([]));
@@ -1745,8 +1799,12 @@ function extraerTextoDeXLSX(file){
    (así toleramos columnas de más, en cualquier orden, típicas de exportar distintos bancos) */
 var PALABRAS_CAB_FECHA=["fecha","date","dia"];
 var PALABRAS_CAB_IMPORTE=["importe","amount","cantidad","monto"];
-var PALABRAS_CAB_CONCEPTO=["concepto","descripcion","detalle","movimiento","beneficiario","comercio","memo"];
+var PALABRAS_CAB_CONCEPTO=["concepto","descripcion","detalle","description","movimiento","beneficiario","comercio","memo","narrative"];
 var PALABRAS_CAB_EVITAR_IMPORTE=["saldo","balance"];
+/* extractos con el importe partido en dos columnas (cargo/abono, debe/haber, paid in/paid out...)
+   en vez de un único importe con signo */
+var PALABRAS_CAB_GASTO=["cargo","debe","gasto","debito","salida","retirada","paid out"];
+var PALABRAS_CAB_INGRESO=["abono","haber","ingreso","credito","entrada","deposito","paid in"];
 function sinAcentos(s){
   return String(s||"").toLowerCase()
     .replace(/[áàäâ]/g,"a").replace(/[éèëê]/g,"e").replace(/[íìïî]/g,"i")
@@ -1782,9 +1840,46 @@ function analizarTabla(tablas){
     if(pi+bi>puntImporte){ puntImporte=pi+bi; idxImporte=c; }
   }
   if(idxImporte===-1) return [];
-  var idxConcepto=-1, puntConcepto=-1;
+
+  /* ¿hay una segunda columna de importe? típico de extractos que separan cargo/abono en vez
+     de usar un único importe con signo. Solo se activa si esa segunda columna se comporta
+     como su pareja: casi nunca tienen valor las dos a la vez en la misma fila (si lo tuvieran
+     casi siempre juntas, lo normal es que sea en realidad un saldo, no un segundo importe) */
+  var idxImporte2=-1, puntImporte2=0;
   for(c=0;c<nCols;c++){
     if(c===idxFecha || c===idxImporte) continue;
+    var pi2=muestra.filter(function(f){ return pareceImporte(f[c]); }).length;
+    if(pi2===0) continue;
+    var esSaldo2 = esCabecera && cabeceraContiene(cabecera[c],PALABRAS_CAB_EVITAR_IMPORTE);
+    var bi2 = esCabecera && cabeceraContiene(cabecera[c],PALABRAS_CAB_IMPORTE) ? 500 : (esSaldo2 ? -500 : 0);
+    if(pi2+bi2>puntImporte2){ puntImporte2=pi2+bi2; idxImporte2=c; }
+  }
+  var dosColumnas=false;
+  if(idxImporte2>-1){
+    var conValor2=0, conAmbas=0, conAlguna=0;
+    muestra.forEach(function(f){
+      var v1=pareceImporte(f[idxImporte]), v2=pareceImporte(f[idxImporte2]);
+      if(v2) conValor2++;
+      if(v1||v2) conAlguna++;
+      if(v1&&v2) conAmbas++;
+    });
+    if(conAlguna>=2 && conAmbas/conAlguna<=0.25 && conValor2>=1){
+      dosColumnas=true;
+    }
+  }
+  var col1EsGasto=true; // por defecto, si no hay pistas de cabecera: la primera columna es el gasto
+  if(dosColumnas && esCabecera){
+    var c1Gasto=cabeceraContiene(cabecera[idxImporte],PALABRAS_CAB_GASTO);
+    var c1Ingreso=cabeceraContiene(cabecera[idxImporte],PALABRAS_CAB_INGRESO);
+    var c2Gasto=cabeceraContiene(cabecera[idxImporte2],PALABRAS_CAB_GASTO);
+    var c2Ingreso=cabeceraContiene(cabecera[idxImporte2],PALABRAS_CAB_INGRESO);
+    if(c1Ingreso||c2Gasto) col1EsGasto=false;
+    else if(c1Gasto||c2Ingreso) col1EsGasto=true;
+  }
+
+  var idxConcepto=-1, puntConcepto=-1;
+  for(c=0;c<nCols;c++){
+    if(c===idxFecha || c===idxImporte || (dosColumnas && c===idxImporte2)) continue;
     var letras=0, celdas=0;
     muestra.forEach(function(f){
       var v=String(f[c]||"").trim(); if(!v) return;
@@ -1799,14 +1894,24 @@ function analizarTabla(tablas){
   var filas=[];
   for(var r=inicio;r<tablas.length;r++){
     var f=tablas[r];
-    if(!f[idxImporte]) continue;
-    var info=normalizarImporte(f[idxImporte]);
-    if(!info) continue;
+    var info=null, esGastoFinal=null;
+    if(dosColumnas){
+      var v1=f[idxImporte] && normalizarImporte(f[idxImporte]);
+      var v2=f[idxImporte2] && normalizarImporte(f[idxImporte2]);
+      if(v1 && v1.valor>0){ info=v1; esGastoFinal=col1EsGasto; }
+      else if(v2 && v2.valor>0){ info=v2; esGastoFinal=!col1EsGasto; }
+      else continue;
+    }else{
+      if(!f[idxImporte]) continue;
+      info=normalizarImporte(f[idxImporte]);
+      if(!info) continue;
+      esGastoFinal=info.esGasto;
+    }
     var fecha = (idxFecha>-1 && f[idxFecha]) ? normalizarFecha(f[idxFecha]) : null;
     if(!fecha) fecha=hoyISO();
     filas.push({
       fecha:fecha, concepto:(idxConcepto>-1?f[idxConcepto]:"").slice(0,80)||t("import.sinConcepto"),
-      importe:info.valor, incluir:info.esGasto, esGasto:info.esGasto, categoria:"otros", transferencia:false
+      importe:info.valor, incluir:esGastoFinal, esGasto:esGastoFinal, categoria:"otros", transferencia:false
     });
   }
   return filas;
@@ -1814,24 +1919,28 @@ function analizarTabla(tablas){
 function analizarTexto(txt){
   var lineas=txt.split(/\r?\n/).map(function(l){ return l.trim(); }).filter(Boolean);
   if(!lineas.length) return [];
-  var delim=null;
+  /* busca el separador cuyo número de columnas se repite en más líneas de todo el texto
+     (no solo las primeras): un PDF puede traer cabecera, avisos legales o pie de página
+     antes/después de la tabla real, y no siempre a los pocos primeros renglones */
+  var delim=null, modaGlobal=0;
   ["\t",";",","].forEach(function(d){
     if(delim) return;
-    var muestraN=Math.min(10,lineas.length);
-    var conteos=lineas.slice(0,muestraN).map(function(l){ return l.split(d).length; });
     var frecuencias={};
-    conteos.forEach(function(n){ frecuencias[n]=(frecuencias[n]||0)+1; });
+    lineas.forEach(function(l){ var n=l.split(d).length; frecuencias[n]=(frecuencias[n]||0)+1; });
     var modaN=0, modaFrec=0;
-    Object.keys(frecuencias).forEach(function(n){ if(frecuencias[n]>modaFrec){ modaFrec=frecuencias[n]; modaN=+n; } });
-    if(modaN>=3 && modaFrec/muestraN>=0.6) delim=d;
+    Object.keys(frecuencias).forEach(function(n){
+      if(+n>=3 && frecuencias[n]>modaFrec){ modaFrec=frecuencias[n]; modaN=+n; }
+    });
+    if(modaN>=3 && modaFrec>=3 && modaFrec/lineas.length>=0.15){ delim=d; modaGlobal=modaN; }
   });
   var filas=[];
   if(delim){
-    var tablas=lineas.map(function(l){ return l.split(delim).map(function(c){ return c.trim().replace(/^"|"$/g,""); }); });
+    var tablas=lineas.map(function(l){ return l.split(delim).map(function(c){ return c.trim().replace(/^"|"$/g,""); }); })
+      .filter(function(f){ return f.length===modaGlobal; });
     filas=analizarTabla(tablas);
   }else{
     lineas.forEach(function(l){
-      var mf=l.match(/\d{1,4}[\/\-.]\d{1,2}[\/\-.]\d{1,4}/);
+      var mf=l.match(/\d{1,4}[\/\-.]{1,2}\d{1,2}[\/\-.]{1,2}\d{1,4}/);
       if(!mf) return;
       var fecha=normalizarFecha(mf[0]);
       if(!fecha) return;
