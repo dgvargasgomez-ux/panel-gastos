@@ -284,6 +284,16 @@ html[data-tema="oscuro"] .pg{
   font-size:12.5px;font-weight:600;color:var(--pino);text-align:center;padding:12px;pointer-events:none;}
 #zonaImportar.pg-arrastrando .pg-soltar-velo{display:flex;}
 
+/* velo de "procesando" mientras se leen los ficheros (del botón o arrastrados) */
+.pg-proceso-velo{position:absolute;inset:0;display:none;align-items:center;justify-content:center;gap:10px;
+  border-radius:3px;background:var(--hover-bg);font-size:12.5px;font-weight:600;color:var(--pino);
+  pointer-events:none;animation:pg-aparecer .18s ease;}
+#zonaImportar.pg-procesando .pg-proceso-velo{display:flex;}
+.pg-spinner{width:17px;height:17px;flex:none;border-radius:50%;
+  border:2px solid var(--linea);border-top-color:var(--pino);animation:pg-girar .7s linear infinite;}
+@keyframes pg-girar{to{transform:rotate(360deg);}}
+@keyframes pg-aparecer{from{opacity:0;}to{opacity:1;}}
+
 .pg-rec-fila{display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid var(--linea);}
 .pg-rec-fila:last-child{border-bottom:none;}
 .pg-rec-info{flex:1;min-width:0;}
@@ -459,12 +469,15 @@ html[data-tema="oscuro"] .pg{
         style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;resize:vertical"></textarea>
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
         <button class="pg-btn pg-btn--sec" id="subirFichero" type="button"></button>
-        <input type="file" id="ficheroImportar" accept=".csv,.txt,.xlsx,.xls,application/pdf,.pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" multiple hidden>
+        <input type="file" id="ficheroImportar" accept=".csv,.txt,.xlsx,.xls,.pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/*,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" multiple hidden>
         <button class="pg-btn" id="analizarImportar" type="button" style="flex:1"></button>
       </div>
       <p class="pg-soltar" id="txtSoltar"></p>
       <p class="pg-error" id="errorImportar"></p>
       <div class="pg-soltar-velo" aria-hidden="true"><span id="txtSoltarVelo"></span></div>
+      <div class="pg-proceso-velo" aria-hidden="true">
+        <span class="pg-spinner"></span><span id="txtProcesando"></span>
+      </div>
     </div>
 
     <div class="pg-card" id="cardRecurrentes">
@@ -620,7 +633,7 @@ html[data-tema="oscuro"] .pg{
         <table class="pg-imptabla">
           <thead><tr>
             <th></th><th id="thFecha">Fecha</th><th id="thConcepto">Concepto</th>
-            <th id="thImporte">Importe</th><th id="thCategoria">Categoría</th>
+            <th id="thImporte">Importe</th><th id="thTipo">Tipo</th><th id="thCategoria">Categoría</th>
           </tr></thead>
           <tbody id="filasImportar"></tbody>
         </table>
@@ -675,15 +688,17 @@ var I18N = {
     "titulo.seccionAnadir":"Añadir movimientos","titulo.seccionDetalle":"Detalle del mes",
     "btn.vaciarMes":"Vaciar {{mes}}","btn.descargar":"Descargar copia","btn.restaurar":"Restaurar copia",
     "titulo.importar":"Importar movimientos",
-    "txt.importarInfo":"Pega el texto de tu banco o sube ficheros CSV, TXT, XLSX o PDF, aunque las columnas no vengan en el mismo orden. Podrás revisar y marcar cada línea antes de guardar; las transferencias entre cuentas se detectan solas.",
+    "txt.importarInfo":"Pega el texto de tu banco o sube ficheros CSV, TXT, XLSX, PDF o una captura de pantalla (PNG/JPG), aunque las columnas no vengan en el mismo orden. Podrás revisar y marcar cada línea antes de guardar; las transferencias entre cuentas se detectan solas.",
     "placeholder.importar":"15/03/2026  Compra supermercado  -42,10€\n16/03/2026  Nómina  +1800,00€",
     "btn.subirFichero":"Subir fichero(s)","btn.analizar":"Analizar","titulo.revisar":"Revisa los movimientos",
     "txt.soltar":"…o arrastra aquí tus ficheros","txt.soltarVelo":"Suelta para importar",
+    "txt.procesando":"Procesando…",
     "import.transferencia":"Posible transferencia — excluida",
     "th.fecha":"Fecha","th.concepto":"Concepto","th.importe":"Importe","th.categoria":"Categoría",
     "btn.cancelar":"Cancelar","btn.importar":"Importar {{n}} movimientos",
     "import.sinConcepto":"Movimiento sin descripción",
     "import.errorVacio":"No se ha reconocido ningún movimiento. Revisa el formato del texto.",
+    "import.leyendoImagen":"Leyendo la imagen… puede tardar unos segundos.",
     "titulo.categorias":"Categorías","lbl.nuevaCategoria":"Nueva categoría",
     "placeholder.categoria":"p. ej. Suscripciones","btn.anadir":"Añadir","btn.cerrar":"Cerrar",
     "cat.errorNombre":"Escribe un nombre para la categoría.",
@@ -778,15 +793,17 @@ var I18N = {
     "titulo.seccionAnadir":"Add transactions","titulo.seccionDetalle":"Month detail",
     "btn.vaciarMes":"Clear {{mes}}","btn.descargar":"Download backup","btn.restaurar":"Restore backup",
     "titulo.importar":"Import transactions",
-    "txt.importarInfo":"Paste text from your bank or upload CSV, TXT, XLSX or PDF files, even if the columns aren't in the same order. You'll review and check each line before saving; transfers between accounts are detected automatically.",
+    "txt.importarInfo":"Paste text from your bank or upload CSV, TXT, XLSX, PDF files or a screenshot (PNG/JPG), even if the columns aren't in the same order. You'll review and check each line before saving; transfers between accounts are detected automatically.",
     "placeholder.importar":"15/03/2026  Grocery store  -42.10€\n16/03/2026  Paycheck  +1800.00€",
     "btn.subirFichero":"Upload file(s)","btn.analizar":"Analyze","titulo.revisar":"Review the transactions",
     "txt.soltar":"…or drag your files here","txt.soltarVelo":"Drop to import",
+    "txt.procesando":"Processing…",
     "import.transferencia":"Possible transfer — excluded",
     "th.fecha":"Date","th.concepto":"Description","th.importe":"Amount","th.categoria":"Category",
     "btn.cancelar":"Cancel","btn.importar":"Import {{n}} transactions",
     "import.sinConcepto":"Transaction without description",
     "import.errorVacio":"No transactions were recognized. Check the text format.",
+    "import.leyendoImagen":"Reading the image… this can take a few seconds.",
     "titulo.categorias":"Categories","lbl.nuevaCategoria":"New category",
     "placeholder.categoria":"e.g. Subscriptions","btn.anadir":"Add","btn.cerrar":"Close",
     "cat.errorNombre":"Enter a name for the category.",
@@ -1716,7 +1733,10 @@ function normalizarImporte(s){
   }
   var n=parseFloat(txt);
   if(!isFinite(n)) return null;
-  return {valor: Math.round(n*100)/100, esGasto: neg ? true : esGasto};
+  /* signo: -1 si venía en negativo, +1 si venía con "+" explícito, 0 si no traía signo.
+     Sirve para decidir gasto/ingreso mirando la columna entera (ver analizarTabla) */
+  return {valor: Math.round(n*100)/100, esGasto: neg ? true : esGasto,
+          signo: neg ? -1 : (esGasto ? 0 : 1)};
 }
 /* reconstruye las líneas de una página de PDF intentando conservar las columnas de una tabla:
    agrupa los fragmentos de texto por altura (Y), y para separar columnas busca huecos
@@ -1832,6 +1852,89 @@ function extraerTextoDePDF(file){
       });
     }, Promise.resolve([]));
   }).then(function(lineas){ return lineas.join("\n"); });
+}
+/* imágenes (captura de pantalla del banco): se leen con OCR. Tesseract pesa bastante, así que
+   solo se descarga la primera vez que se importa una imagen, no al abrir la app */
+var promesaTesseract=null;
+function cargarTesseract(){
+  if(window.Tesseract) return Promise.resolve(window.Tesseract);
+  if(promesaTesseract) return promesaTesseract;
+  promesaTesseract=new Promise(function(resolve,reject){
+    var s=document.createElement("script");
+    s.src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js";
+    s.onload=function(){ window.Tesseract ? resolve(window.Tesseract) : reject(new Error("sin tesseract")); };
+    s.onerror=function(){ promesaTesseract=null; reject(new Error("sin tesseract")); };
+    document.head.appendChild(s);
+  });
+  return promesaTesseract;
+}
+/* una captura de móvil trae el texto muy pequeño y el OCR se equivoca mucho: se amplía y se
+   pasa a gris con más contraste antes de reconocer, que es lo que más mejora el resultado */
+function prepararImagenParaOCR(file, anchoObjetivo){
+  return new Promise(function(resolve,reject){
+    var url=URL.createObjectURL(file);
+    var img=new Image();
+    img.onload=function(){
+      var escala=Math.max(1, Math.min(5, anchoObjetivo/(img.width||anchoObjetivo)));
+      var c=document.createElement("canvas");
+      c.width=Math.round(img.width*escala);
+      c.height=Math.round(img.height*escala);
+      var ctx=c.getContext("2d");
+      ctx.imageSmoothingEnabled=true;
+      ctx.imageSmoothingQuality="high";
+      ctx.drawImage(img,0,0,c.width,c.height);
+      try{
+        var d=ctx.getImageData(0,0,c.width,c.height), p=d.data;
+        for(var i=0;i<p.length;i+=4){
+          var g=0.299*p[i]+0.587*p[i+1]+0.114*p[i+2];
+          g=(g-128)*1.4+128;              /* más contraste */
+          g=g<0?0:(g>255?255:g);
+          p[i]=p[i+1]=p[i+2]=g;
+        }
+        ctx.putImageData(d,0,0);
+      }catch(e){}
+      URL.revokeObjectURL(url);
+      resolve(c);
+    };
+    img.onerror=function(){ URL.revokeObjectURL(url); reject(new Error("imagen")); };
+    img.src=url;
+  });
+}
+/* el OCR devuelve las palabras con su posición, así que se reaprovecha la misma reconstrucción
+   de columnas del PDF en vez de fiarse del texto plano que devuelve Tesseract */
+function extraerTextoDeImagen(file){
+  return Promise.all([cargarTesseract(), prepararImagenParaOCR(file,1600)]).then(function(a){
+    return a[0].recognize(a[1], "spa");
+  }).then(function(res){
+    var palabras=(res && res.data && res.data.words) || [];
+    if(!palabras.length) return (res && res.data && res.data.text) || "";
+    return lineasDeOCR(palabras).join("\n");
+  });
+}
+/* una captura de móvil no es una tabla: no se buscan columnas, solo se juntan en una línea las
+   palabras que están a la misma altura. La tolerancia va en proporción al alto del texto porque
+   la imagen se ha ampliado y los renglones ya no caen al píxel */
+function lineasDeOCR(palabras){
+  var filas=[];
+  palabras.forEach(function(p){
+    if(!p.text || !p.text.trim()) return;
+    var b=p.bbox||{x0:0,x1:0,y0:0,y1:0};
+    var alto=Math.max(1,(b.y1||0)-(b.y0||0));
+    var centro=((b.y0||0)+(b.y1||0))/2;
+    var fila=null;
+    for(var i=0;i<filas.length;i++){
+      if(Math.abs(filas[i].centro-centro)<=Math.max(6,filas[i].alto*0.6)){ fila=filas[i]; break; }
+    }
+    if(!fila){ fila={centro:centro, alto:alto, items:[]}; filas.push(fila); }
+    fila.items.push({x:b.x0||0, str:p.text});
+    fila.centro=(fila.centro*(fila.items.length-1)+centro)/fila.items.length;
+    fila.alto=Math.max(fila.alto,alto);
+  });
+  filas.sort(function(a,b){ return a.centro-b.centro; });
+  return filas.map(function(f){
+    return f.items.sort(function(a,b){ return a.x-b.x; })
+      .map(function(i){ return i.str; }).join(" ").replace(/\s+/g," ").trim();
+  }).filter(Boolean);
 }
 /* hoja de cálculo (XLSX/XLS): cada hoja se pasa a texto separado por tabuladores y se reutiliza
    el mismo detector de columnas que para CSV/TXT (así toleramos el mismo desorden de columnas) */
@@ -1954,6 +2057,17 @@ function analizarTabla(tablas){
     if(puntTotal>puntConcepto){ puntConcepto=puntTotal; idxConcepto=c; }
   }
 
+  /* si la columna de importe trae signos (hay algún negativo), es una columna con signo: lo
+     negativo sale de la cuenta (gasto) y lo positivo entra (ingreso). Solo cuando no hay ni un
+     signo en toda la columna se mantiene el criterio antiguo de tratarlo como gasto */
+  var columnaConSigno=false;
+  if(!dosColumnas){
+    columnaConSigno = muestra.some(function(f){
+      var i=f[idxImporte] && normalizarImporte(f[idxImporte]);
+      return !!i && i.signo<0;
+    });
+  }
+
   var filas=[];
   for(var r=inicio;r<tablas.length;r++){
     var f=tablas[r];
@@ -1968,18 +2082,20 @@ function analizarTabla(tablas){
       if(!f[idxImporte]) continue;
       info=normalizarImporte(f[idxImporte]);
       if(!info) continue;
-      esGastoFinal=info.esGasto;
+      esGastoFinal = columnaConSigno ? info.signo<0 : info.esGasto;
     }
     var fecha = (idxFecha>-1 && f[idxFecha]) ? normalizarFecha(f[idxFecha]) : null;
     if(!fecha) fecha=hoyISO();
     filas.push({
       fecha:fecha, concepto:(idxConcepto>-1?f[idxConcepto]:"").slice(0,80)||t("import.sinConcepto"),
-      importe:info.valor, incluir:esGastoFinal, esGasto:esGastoFinal, categoria:"otros", transferencia:false
+      importe:info.valor, incluir:true, esGasto:esGastoFinal, categoria:"otros", transferencia:false
     });
   }
   return filas;
 }
 function analizarTexto(txt){
+  /* algunos PDF traen caracteres de control por fallos de codificación de sus fuentes */
+  txt=String(txt||"").replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,"");
   var lineas=txt.split(/\r?\n/).map(function(l){ return l.trim(); }).filter(Boolean);
   if(!lineas.length) return [];
   /* busca el separador cuyo número de columnas se repite en más líneas de todo el texto
@@ -2002,23 +2118,9 @@ function analizarTexto(txt){
       .filter(function(f){ return f.length===modaGlobal; });
     filas=analizarTabla(tablas);
   }else{
-    lineas.forEach(function(l){
-      var mf=l.match(/\d{1,4}[\/\-.]{1,2}\d{1,2}[\/\-.]{1,2}\d{1,4}/);
-      if(!mf) return;
-      var fecha=normalizarFecha(mf[0]);
-      if(!fecha) return;
-      var resto=l.replace(mf[0],"");
-      var nums=resto.match(/[+-]?\d+(?:[.,]\d{3})*(?:[.,]\d{1,2})?\s*€?/g);
-      if(!nums || !nums.length) return;
-      var importeTxt=nums[nums.length>1?0:nums.length-1];
-      var info=normalizarImporte(importeTxt);
-      if(!info) return;
-      var concepto=resto.replace(importeTxt,"").replace(/[€;,\t]+/g," ").replace(/\b(EUR|USD|GBP)\b/gi," ").trim().replace(/\s{2,}/g," ");
-      filas.push({
-        fecha:fecha, concepto:concepto.slice(0,80)||t("import.sinConcepto"),
-        importe:info.valor, incluir:info.esGasto, esGasto:info.esGasto, categoria:"otros", transferencia:false
-      });
-    });
+    /* texto sin columnas (pegado a mano o sacado de una captura): se analiza línea a línea,
+       arrastrando la fecha de cabecera de cada grupo */
+    filas=analizarLineasPermisivo(lineas);
   }
   if(!filas.length) filas=analizarLineasPermisivo(lineas);
   return filas;
@@ -2027,14 +2129,40 @@ function analizarTexto(txt){
    da por bueno cualquier renglón que tenga algo con pinta de dinero (con decimales) y algo de
    texto. Basta con saber concepto, importe y si suma o resta; la fecha, si no se ve, es la de
    hoy y la categoría queda en "otros" para revisarlo antes de guardar */
+/* saca de una línea los trozos que parecen dinero: o llevan símbolo de moneda, o llevan signo
+   delante, o acaban en dos decimales. Así no se cuelan números sueltos (referencias, cantidades) */
+function dinerosDeLinea(l){
+  var candidatos=l.match(/[+-]?\s*\d[\d.,]*\s*€?/g) || [];
+  return candidatos.map(function(c){ return c.trim(); }).filter(function(c){
+    if(!/\d/.test(c)) return false;
+    return /€/.test(c) || /^[+-]/.test(c) || /[.,]\d{2}$/.test(c.replace(/\s*€$/,""));
+  });
+}
 function analizarLineasPermisivo(lineas){
   var filas=[];
+  /* si el documento distingue los movimientos con signo (+/-), como hacen las apps del banco,
+     se exige el signo: así el saldo que va al lado no se cuela como si fuera un movimiento */
+  var conSigno=lineas.filter(function(l){ return /[+-]\s*\d/.test(l); }).length;
+  var exigirSigno = conSigno>=2;
+  /* en las apps del banco (y en muchos extractos) la fecha es una cabecera de grupo: aparece
+     sola en una línea y vale para todos los movimientos que vienen debajo hasta la siguiente */
+  var fechaSeccion=null;
   lineas.forEach(function(linea){
     var l=linea.replace(/\t/g," ").trim();
     if(!l) return;
-    var dineros=l.match(/[+-]?\d{1,3}(?:[.,]\d{3})*[.,]\d{2}(?!\d)/g);
-    if(!dineros || !dineros.length) return;
-    var importeTxt=dineros[0];
+    var soloFecha=l.match(/^\W*(\d{1,4}[\/\-.]{1,2}\d{1,2}[\/\-.]{1,2}\d{1,4})\W*$/);
+    if(soloFecha){
+      var fs=normalizarFecha(soloFecha[1]);
+      if(fs){ fechaSeccion=fs; return; }
+    }
+    if(/^\W*(hoy|today)\W*$/i.test(l)){ fechaSeccion=hoyISO(); return; }
+    var dineros=dinerosDeLinea(l);
+    if(!dineros.length) return;
+    /* si hay varias cifras en la línea, la del movimiento es la que lleva signo (la otra
+       suele ser el saldo) */
+    var firmados=dineros.filter(function(d){ return /^[+-]/.test(d); });
+    if(exigirSigno && !firmados.length) return;
+    var importeTxt=(firmados[0]||dineros[0]);
     var info=normalizarImporte(importeTxt);
     if(!info || !info.valor) return;
     var resto=l;
@@ -2046,8 +2174,8 @@ function analizarLineasPermisivo(lineas){
       .trim().replace(/\s{2,}/g," ");
     if(!/[a-zA-ZÀ-ÿ]/.test(concepto)) return;
     filas.push({
-      fecha:fecha||hoyISO(), concepto:concepto.slice(0,80)||t("import.sinConcepto"),
-      importe:info.valor, incluir:info.esGasto, esGasto:info.esGasto, categoria:"otros", transferencia:false
+      fecha:fecha||fechaSeccion||hoyISO(), concepto:concepto.slice(0,80)||t("import.sinConcepto"),
+      importe:info.valor, incluir:true, esGasto:info.esGasto, categoria:"otros", transferencia:false
     });
   });
   return filas;
@@ -2064,7 +2192,9 @@ function detectarTransferencias(filas){
       if(usadas[j]) continue;
       var b=filas[j];
       if(usadas[j] || Math.round(Math.abs(b.importe)*100)!==absA) continue;
-      if(a.incluir===b.incluir) continue;
+      /* una transferencia es un par gasto/ingreso del mismo importe: hay que mirar el tipo,
+         no si están marcadas (ahora entran marcadas todas las filas) */
+      if(a.esGasto===b.esGasto) continue;
       var dias=Math.abs(Math.round((new Date(b.fecha).getTime()-new Date(a.fecha).getTime())/86400000));
       if(dias>2) continue;
       usadas[i]=true; usadas[j]=true;
@@ -2080,11 +2210,26 @@ function procesarFicherosImportar(files){
   files=(files||[]).filter(Boolean);
   if(!files.length) return;
   $("errorImportar").textContent="";
+  /* el velo de "procesando" se mantiene un mínimo de un segundo aunque el fichero se analice
+     al instante: si no, con un CSV pequeño parpadea y no da sensación de que haya hecho nada */
+  var zona=$("zonaImportar"), desde=Date.now();
+  zona.classList.add("pg-procesando");
+  function alTerminar(fn){
+    setTimeout(function(){
+      zona.classList.remove("pg-procesando");
+      fn();
+    }, Math.max(0, 1000-(Date.now()-desde)));
+  }
   Promise.all(files.map(function(f){
     var esPDF = f.type==="application/pdf" || /\.pdf$/i.test(f.name);
     if(esPDF) return extraerTextoDePDF(f).catch(function(){ return ""; });
     var esXLSX = /\.xlsx?$/i.test(f.name) || /spreadsheetml|ms-excel/.test(f.type);
     if(esXLSX) return extraerTextoDeXLSX(f).catch(function(){ return ""; });
+    var esImagen = /^image\//.test(f.type) || /\.(png|jpe?g|webp|bmp)$/i.test(f.name);
+    if(esImagen){
+      $("errorImportar").textContent=t("import.leyendoImagen");
+      return extraerTextoDeImagen(f).catch(function(){ return ""; });
+    }
     return new Promise(function(resolve){
       var lector=new FileReader();
       lector.onload=function(){ resolve(String(lector.result)); };
@@ -2094,7 +2239,9 @@ function procesarFicherosImportar(files){
   })).then(function(textos){
     var todasFilas=[];
     textos.forEach(function(txt){ todasFilas=todasFilas.concat(analizarTexto(txt)); });
-    mostrarPreviaImportacion(detectarTransferencias(todasFilas));
+    alTerminar(function(){ mostrarPreviaImportacion(detectarTransferencias(todasFilas)); });
+  }).catch(function(){
+    alTerminar(function(){ $("errorImportar").textContent=t("import.errorVacio"); });
   });
 }
 function mostrarPreviaImportacion(filas){
@@ -2115,15 +2262,28 @@ function mostrarPreviaImportacion(filas){
       '<td><input type="date" data-campo="fecha" value="'+f.fecha+'"></td>'+
       '<td><input type="text" data-campo="concepto" value="'+esc(f.concepto)+'"></td>'+
       '<td><input type="text" inputmode="decimal" data-campo="importe" value="'+decimalATexto(f.importe)+'"></td>'+
+      '<td><select data-campo="tipo">'+
+        '<option value="gasto">'+t("rec.gasto")+'</option>'+
+        '<option value="ingreso">'+t("rec.ingreso")+'</option></select></td>'+
       '<td><select data-campo="categoria">'+opciones+'</select></td>'+
       '</tr>';
   }).join("");
   var filasEl=$("filasImportar").querySelectorAll("tr");
   filasEl.forEach(function(tr,i){
     tr.querySelector('[data-campo="categoria"]').value = filasPendientes[i].categoria;
+    tr.querySelector('[data-campo="tipo"]').value = filasPendientes[i].esGasto ? "gasto" : "ingreso";
   });
+  actualizarBotonImportar();
   $("errorImportarModal").textContent="";
   abrirModal("overlayImportar");
+}
+/* el botón dice cuántos movimientos se van a guardar: hay que refrescarlo al abrir la previa
+   y cada vez que se marca/desmarca una fila (antes se quedaba con el número de la vez anterior,
+   y por eso podía poner "0 movimientos" con la tabla llena) */
+function actualizarBotonImportar(){
+  $("confirmarImportar").textContent = t("btn.importar",{
+    n: filasPendientes.filter(function(f){ return f.incluir; }).length
+  });
 }
 
 /* ---------- modales ---------- */
@@ -2510,11 +2670,13 @@ function aplicarIdioma(){
   $("subirFichero").textContent = t("btn.subirFichero");
   $("txtSoltar").textContent = t("txt.soltar");
   $("txtSoltarVelo").textContent = t("txt.soltarVelo");
+  $("txtProcesando").textContent = t("txt.procesando");
   $("analizarImportar").textContent = t("btn.analizar");
   $("tituloRevisar").textContent = t("titulo.revisar");
   $("thFecha").textContent = t("th.fecha");
   $("thConcepto").textContent = t("th.concepto");
   $("thImporte").textContent = t("th.importe");
+  $("thTipo").textContent = t("lbl.recTipo");
   $("thCategoria").textContent = t("th.categoria");
   $("cancelarImportar").textContent = t("btn.cancelar");
   $("confirmarImportar").textContent = t("btn.importar",{n:filasPendientes.filter(function(f){return f.incluir;}).length});
@@ -3023,10 +3185,11 @@ function inicializarEventos(){
     var i=+tr.getAttribute("data-fila");
     var campo=e.target.getAttribute("data-campo");
     if(!filasPendientes[i]) return;
-    if(campo==="incluir") filasPendientes[i].incluir=e.target.checked;
+    if(campo==="incluir"){ filasPendientes[i].incluir=e.target.checked; actualizarBotonImportar(); }
     else if(campo==="fecha") filasPendientes[i].fecha=e.target.value;
     else if(campo==="concepto") filasPendientes[i].concepto=e.target.value;
     else if(campo==="importe") filasPendientes[i].importe=aNumero(e.target.value);
+    else if(campo==="tipo") filasPendientes[i].esGasto=(e.target.value==="gasto");
     else if(campo==="categoria") filasPendientes[i].categoria=e.target.value;
   });
   $("cancelarImportar").addEventListener("click", function(){ cerrarModal("overlayImportar"); });
@@ -3045,17 +3208,27 @@ function inicializarEventos(){
       return;
     }
     if(validas.length){
+      /* cada movimiento va a su mes por su fecha: los gastos como movimiento y los ingresos
+         sumando al ingreso de ese mes. listaMeses() saca las pestañas de ahí, así que los meses
+         que no existieran aparecen solos */
       validas.forEach(function(f){
+        var importe=Math.round(f.importe*100)/100;
+        if(f.esGasto===false){
+          var m=mesDe(f.fecha);
+          estado.ingresos[m]=Math.round(((estado.ingresos[m]||0)+importe)*100)/100;
+          return;
+        }
         estado.gastos.push({
           id: Date.now()+"-"+Math.random().toString(36).slice(2,7),
           concepto: (f.concepto||"").trim() || t("import.sinConcepto"),
-          importe: Math.round(f.importe*100)/100,
+          importe: importe,
           categoria: f.categoria || "otros",
           fecha: f.fecha
         });
       });
       guardarEstado();
-      mes = validas[validas.length-1].fecha.slice(0,7);
+      /* se abre el mes más reciente de lo importado, no el último de la lista */
+      mes = validas.map(function(f){ return mesDe(f.fecha); }).sort().pop();
     }
     cerrarModal("overlayImportar");
     $("textoImportar").value="";
