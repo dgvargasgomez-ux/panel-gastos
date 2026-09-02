@@ -276,6 +276,14 @@ html[data-tema="oscuro"] .pg{
   border-radius:2px;padding:4px 5px;width:100%;background:var(--campo);box-sizing:border-box;}
 .pg-transf-aviso{font-size:9.5px;color:var(--tinta2);white-space:nowrap;margin-top:3px;}
 
+/* zona de "arrastra aquí tus ficheros" de la tarjeta de importar */
+#zonaImportar{position:relative;}
+.pg-soltar{font-size:11.5px;color:var(--tinta2);margin:8px 0 0;text-align:center;}
+.pg-soltar-velo{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+  border:2px dashed var(--pino);border-radius:3px;background:var(--hover-bg);
+  font-size:12.5px;font-weight:600;color:var(--pino);text-align:center;padding:12px;pointer-events:none;}
+#zonaImportar.pg-arrastrando .pg-soltar-velo{display:flex;}
+
 .pg-rec-fila{display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid var(--linea);}
 .pg-rec-fila:last-child{border-bottom:none;}
 .pg-rec-info{flex:1;min-width:0;}
@@ -444,7 +452,7 @@ html[data-tema="oscuro"] .pg{
     </div>
 
     <div class="pg-col-secundaria">
-    <div class="pg-card">
+    <div class="pg-card" id="zonaImportar">
       <h2 class="pg-tit" id="tituloImportar">Importar movimientos</h2>
       <p id="txtImportarInfo" style="font-size:12px;color:var(--tinta2);margin:0 0 12px"></p>
       <textarea id="textoImportar" class="pg-in" rows="4"
@@ -454,7 +462,9 @@ html[data-tema="oscuro"] .pg{
         <input type="file" id="ficheroImportar" accept=".csv,.txt,.xlsx,.xls,application/pdf,.pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" multiple hidden>
         <button class="pg-btn" id="analizarImportar" type="button" style="flex:1"></button>
       </div>
+      <p class="pg-soltar" id="txtSoltar"></p>
       <p class="pg-error" id="errorImportar"></p>
+      <div class="pg-soltar-velo" aria-hidden="true"><span id="txtSoltarVelo"></span></div>
     </div>
 
     <div class="pg-card" id="cardRecurrentes">
@@ -668,6 +678,7 @@ var I18N = {
     "txt.importarInfo":"Pega el texto de tu banco o sube ficheros CSV, TXT, XLSX o PDF, aunque las columnas no vengan en el mismo orden. Podrás revisar y marcar cada línea antes de guardar; las transferencias entre cuentas se detectan solas.",
     "placeholder.importar":"15/03/2026  Compra supermercado  -42,10€\n16/03/2026  Nómina  +1800,00€",
     "btn.subirFichero":"Subir fichero(s)","btn.analizar":"Analizar","titulo.revisar":"Revisa los movimientos",
+    "txt.soltar":"…o arrastra aquí tus ficheros","txt.soltarVelo":"Suelta para importar",
     "import.transferencia":"Posible transferencia — excluida",
     "th.fecha":"Fecha","th.concepto":"Concepto","th.importe":"Importe","th.categoria":"Categoría",
     "btn.cancelar":"Cancelar","btn.importar":"Importar {{n}} movimientos",
@@ -770,6 +781,7 @@ var I18N = {
     "txt.importarInfo":"Paste text from your bank or upload CSV, TXT, XLSX or PDF files, even if the columns aren't in the same order. You'll review and check each line before saving; transfers between accounts are detected automatically.",
     "placeholder.importar":"15/03/2026  Grocery store  -42.10€\n16/03/2026  Paycheck  +1800.00€",
     "btn.subirFichero":"Upload file(s)","btn.analizar":"Analyze","titulo.revisar":"Review the transactions",
+    "txt.soltar":"…or drag your files here","txt.soltarVelo":"Drop to import",
     "import.transferencia":"Possible transfer — excluded",
     "th.fecha":"Date","th.concepto":"Description","th.importe":"Amount","th.categoria":"Category",
     "btn.cancelar":"Cancel","btn.importar":"Import {{n}} transactions",
@@ -1725,30 +1737,36 @@ function reconstruirLineasPDF(items){
   filas.sort(function(a,b){ return b.y-a.y; });
   filas.forEach(function(f){ f.items.sort(function(a,b){ return a.transform[4]-b.transform[4]; }); });
 
-  /* se usa el inicio (x) del fragmento que viene DESPUÉS del hueco, no el punto medio: el
-     principio de una columna es estable de una fila a otra (alineado a la izquierda), mientras
-     que el punto medio del hueco varía según lo larga que sea la celda anterior en cada fila */
-  var huecos=[];
-  filas.forEach(function(f){
-    for(var i=1;i<f.items.length;i++){
-      var ant=f.items[i-1], act=f.items[i];
-      var finAnt=ant.transform[4]+(ant.width||0);
-      var hueco=act.transform[4]-finAnt;
-      var anchoChar = ant.str.length ? (ant.width||0)/ant.str.length : 4;
-      if(hueco>Math.max(anchoChar*2.2,6)) huecos.push(act.transform[4]);
-    }
-  });
-  huecos.sort(function(a,b){ return a-b; });
+  /* las columnas se deducen de las franjas verticales por las que no pasa NINGÚN texto de las
+     líneas con pinta de fila de tabla. Mirar el hueco de cada línea por separado no sirve: una
+     celda vacía o un importe alineado a la derecha desplazan el hueco de una fila a otra, que
+     es justo lo que pasa en los extractos con columnas de cargo/abono */
+  function ocupacion(minItems){
+    var ocup=[];
+    filas.forEach(function(f){
+      if(f.items.length<minItems) return;
+      f.items.forEach(function(it){
+        var x=it.transform[4];
+        ocup.push([x, x+(it.width||0)]);
+      });
+    });
+    return ocup;
+  }
+  var lineasTabla=filas.filter(function(f){ return f.items.length>=3; }).length;
+  var ocupados=ocupacion(lineasTabla>=2 ? 3 : 2);
   var fronteras=[];
-  huecos.forEach(function(x){
-    var f=fronteras[fronteras.length-1];
-    if(f && x-f.suma/f.n<10){ f.suma+=x; f.n++; }
-    else fronteras.push({suma:x,n:1});
-  });
-  /* no exigimos que un límite aparezca en varias líneas: en un extracto con columnas de
-     cargo/abono separadas, una fila normal solo tiene valor en una de las dos, así que el
-     límite entre esas dos columnas puede no repetirse más que en la cabecera */
-  fronteras = fronteras.map(function(f){ return f.suma/f.n; });
+  if(ocupados.length){
+    ocupados.sort(function(a,b){ return a[0]-b[0]; });
+    var union=[], act=ocupados[0].slice(), i;
+    for(i=1;i<ocupados.length;i++){
+      if(ocupados[i][0]<=act[1]) act[1]=Math.max(act[1],ocupados[i][1]);
+      else { union.push(act); act=ocupados[i].slice(); }
+    }
+    union.push(act);
+    for(i=0;i<union.length-1;i++){
+      if(union[i+1][0]-union[i][1]>=6) fronteras.push((union[i][1]+union[i+1][0])/2);
+    }
+  }
 
   if(!fronteras.length){
     return filas.map(function(f){
@@ -1765,6 +1783,34 @@ function reconstruirLineasPDF(items){
     return celdas.map(function(c){ return c.trim(); }).join("\t");
   }).filter(function(l){ return l.replace(/\t/g,"").trim(); });
 }
+/* muchos extractos son PDF de formulario rellenable: los movimientos no están en el contenido
+   de la página, sino en el valor de los campos (anotaciones "widget"). getTextContent() solo lee
+   el contenido de la página, así que hay que leer también las anotaciones y convertirlas en
+   fragmentos de texto con su posición para poder reconstruir la tabla igual que el resto */
+function itemsDeAnotaciones(anotaciones){
+  var items=[];
+  (anotaciones||[]).forEach(function(a){
+    if(!a || a.subtype!=="Widget" || a.hidden) return;
+    var valor=a.fieldValue;
+    if(Array.isArray(valor)) valor=valor.join(" ");
+    if(valor===null || valor===undefined) return;
+    valor=String(valor).replace(/\s+/g," ").trim();
+    if(!valor) return;
+    var r=a.rect||[0,0,0,0];
+    var x1=Math.min(r[0],r[2]), x2=Math.max(r[0],r[2]);
+    var y1=Math.min(r[1],r[3]), y2=Math.max(r[1],r[3]);
+    var alto=y2-y1, anchoCaja=x2-x1;
+    /* el ancho de la caja no sirve como ancho del texto (una caja ancha con poco texto se
+       comería el hueco hasta la columna siguiente): se estima a partir del alto de la caja */
+    var anchoChar=Math.max(3, alto*0.5);
+    var ancho=Math.min(valor.length*anchoChar, anchoCaja||valor.length*anchoChar);
+    var x=x1;
+    if(a.textAlignment===2) x=x2-ancho;
+    else if(a.textAlignment===1) x=x1+(anchoCaja-ancho)/2;
+    items.push({str:valor, transform:[1,0,0,1,x,y1+alto*0.25], width:ancho});
+  });
+  return items;
+}
 function extraerTextoDePDF(file){
   if(!window.pdfjsLib) return Promise.reject(new Error("sin pdfjs"));
   return file.arrayBuffer().then(function(buffer){
@@ -1775,9 +1821,13 @@ function extraerTextoDePDF(file){
     return paginas.reduce(function(promesa,n){
       return promesa.then(function(lineasAcum){
         return pdf.getPage(n).then(function(pagina){
-          return pagina.getTextContent();
-        }).then(function(contenido){
-          return lineasAcum.concat(reconstruirLineasPDF(contenido.items));
+          return Promise.all([
+            pagina.getTextContent(),
+            pagina.getAnnotations().catch(function(){ return []; })
+          ]);
+        }).then(function(res){
+          var items=(res[0].items||[]).concat(itemsDeAnotaciones(res[1]));
+          return lineasAcum.concat(reconstruirLineasPDF(items));
         });
       });
     }, Promise.resolve([]));
@@ -1816,9 +1866,22 @@ function cabeceraContiene(cab,palabras){
 }
 function analizarTabla(tablas){
   if(!tablas.length) return [];
-  var cabecera=tablas[0];
-  var esCabecera = !pareceFecha(cabecera[0]) && !cabecera.some(pareceImporte);
-  var inicio = esCabecera ? 1 : 0;
+  /* la tabla no tiene por qué empezar en la primera línea: un PDF trae encabezado, dirección,
+     avisos... así que se busca dónde empiezan de verdad los datos (dos filas seguidas con
+     pinta de importe) y se toma como cabecera la línea inmediatamente anterior */
+  function filaConImporte(f){ return !!f && f.some(pareceImporte); }
+  var primeraDatos=-1, i;
+  for(i=0;i<tablas.length-1;i++){
+    if(filaConImporte(tablas[i]) && filaConImporte(tablas[i+1])){ primeraDatos=i; break; }
+  }
+  if(primeraDatos===-1){
+    for(i=0;i<tablas.length;i++){ if(filaConImporte(tablas[i])){ primeraDatos=i; break; } }
+  }
+  if(primeraDatos===-1) return [];
+  var cabecera = primeraDatos>0 ? tablas[primeraDatos-1] : null;
+  var esCabecera = !!cabecera && !filaConImporte(cabecera) && !cabecera.some(pareceFecha);
+  if(!esCabecera) cabecera=[];
+  var inicio = primeraDatos;
   if(tablas.length<=inicio) return [];
   var nCols = tablas.slice(inicio).reduce(function(m,f){ return Math.max(m,f.length); },0);
   var muestra = tablas.slice(inicio, inicio+Math.min(20,tablas.length-inicio));
@@ -1863,7 +1926,7 @@ function analizarTabla(tablas){
       if(v1||v2) conAlguna++;
       if(v1&&v2) conAmbas++;
     });
-    if(conAlguna>=2 && conAmbas/conAlguna<=0.25 && conValor2>=1){
+    if(conAlguna>=2 && conAmbas/conAlguna<=0.5 && conValor2>=1){
       dosColumnas=true;
     }
   }
@@ -1957,6 +2020,36 @@ function analizarTexto(txt){
       });
     });
   }
+  if(!filas.length) filas=analizarLineasPermisivo(lineas);
+  return filas;
+}
+/* último recurso: si no se ha reconocido ninguna estructura, se recorre línea a línea y se
+   da por bueno cualquier renglón que tenga algo con pinta de dinero (con decimales) y algo de
+   texto. Basta con saber concepto, importe y si suma o resta; la fecha, si no se ve, es la de
+   hoy y la categoría queda en "otros" para revisarlo antes de guardar */
+function analizarLineasPermisivo(lineas){
+  var filas=[];
+  lineas.forEach(function(linea){
+    var l=linea.replace(/\t/g," ").trim();
+    if(!l) return;
+    var dineros=l.match(/[+-]?\d{1,3}(?:[.,]\d{3})*[.,]\d{2}(?!\d)/g);
+    if(!dineros || !dineros.length) return;
+    var importeTxt=dineros[0];
+    var info=normalizarImporte(importeTxt);
+    if(!info || !info.valor) return;
+    var resto=l;
+    dineros.forEach(function(d){ resto=resto.replace(d,""); });
+    var mf=resto.match(/\d{1,4}[\/\-.]{1,2}\d{1,2}[\/\-.]{1,2}\d{1,4}/);
+    var fecha=mf ? normalizarFecha(mf[0]) : null;
+    if(mf) resto=resto.replace(mf[0],"");
+    var concepto=resto.replace(/[€;,\t]+/g," ").replace(/\b(EUR|USD|GBP)\b/gi," ")
+      .trim().replace(/\s{2,}/g," ");
+    if(!/[a-zA-ZÀ-ÿ]/.test(concepto)) return;
+    filas.push({
+      fecha:fecha||hoyISO(), concepto:concepto.slice(0,80)||t("import.sinConcepto"),
+      importe:info.valor, incluir:info.esGasto, esGasto:info.esGasto, categoria:"otros", transferencia:false
+    });
+  });
   return filas;
 }
 /* marca como posible transferencia entre cuentas cada par gasto/ingreso del mismo importe
@@ -1981,6 +2074,28 @@ function detectarTransferencias(filas){
     }
   }
   return filas;
+}
+/* lee una tanda de ficheros (del botón o arrastrados) y abre la previa de importación */
+function procesarFicherosImportar(files){
+  files=(files||[]).filter(Boolean);
+  if(!files.length) return;
+  $("errorImportar").textContent="";
+  Promise.all(files.map(function(f){
+    var esPDF = f.type==="application/pdf" || /\.pdf$/i.test(f.name);
+    if(esPDF) return extraerTextoDePDF(f).catch(function(){ return ""; });
+    var esXLSX = /\.xlsx?$/i.test(f.name) || /spreadsheetml|ms-excel/.test(f.type);
+    if(esXLSX) return extraerTextoDeXLSX(f).catch(function(){ return ""; });
+    return new Promise(function(resolve){
+      var lector=new FileReader();
+      lector.onload=function(){ resolve(String(lector.result)); };
+      lector.onerror=function(){ resolve(""); };
+      lector.readAsText(f);
+    });
+  })).then(function(textos){
+    var todasFilas=[];
+    textos.forEach(function(txt){ todasFilas=todasFilas.concat(analizarTexto(txt)); });
+    mostrarPreviaImportacion(detectarTransferencias(todasFilas));
+  });
 }
 function mostrarPreviaImportacion(filas){
   filasPendientes=filas;
@@ -2393,6 +2508,8 @@ function aplicarIdioma(){
   $("txtImportarInfo").textContent = t("txt.importarInfo");
   $("textoImportar").placeholder = t("placeholder.importar");
   $("subirFichero").textContent = t("btn.subirFichero");
+  $("txtSoltar").textContent = t("txt.soltar");
+  $("txtSoltarVelo").textContent = t("txt.soltarVelo");
   $("analizarImportar").textContent = t("btn.analizar");
   $("tituloRevisar").textContent = t("titulo.revisar");
   $("thFecha").textContent = t("th.fecha");
@@ -2857,27 +2974,45 @@ function inicializarEventos(){
   $("ficheroImportar").addEventListener("change", function(e){
     var files=Array.from(e.target.files||[]);
     e.target.value="";
-    if(!files.length) return;
-    $("errorImportar").textContent="";
-    Promise.all(files.map(function(f){
-      var esPDF = f.type==="application/pdf" || /\.pdf$/i.test(f.name);
-      if(esPDF){
-        return extraerTextoDePDF(f).catch(function(){ return ""; });
-      }
-      var esXLSX = /\.xlsx?$/i.test(f.name) || /spreadsheetml|ms-excel/.test(f.type);
-      if(esXLSX){
-        return extraerTextoDeXLSX(f).catch(function(){ return ""; });
-      }
-      return new Promise(function(resolve){
-        var lector=new FileReader();
-        lector.onload=function(){ resolve(String(lector.result)); };
-        lector.onerror=function(){ resolve(""); };
-        lector.readAsText(f);
-      });
-    })).then(function(textos){
-      var todasFilas=[];
-      textos.forEach(function(txt){ todasFilas=todasFilas.concat(analizarTexto(txt)); });
-      mostrarPreviaImportacion(detectarTransferencias(todasFilas));
+    procesarFicherosImportar(files);
+  });
+
+  /* arrastrar y soltar ficheros sobre la tarjeta de importar */
+  var zona=$("zonaImportar");
+  var arrastres=0;
+  function tieneFicheros(e){
+    var dt=e.dataTransfer; if(!dt) return false;
+    if(dt.types) return Array.prototype.indexOf.call(dt.types,"Files")>-1;
+    return true;
+  }
+  zona.addEventListener("dragenter", function(e){
+    if(!tieneFicheros(e)) return;
+    e.preventDefault();
+    arrastres++;
+    zona.classList.add("pg-arrastrando");
+  });
+  zona.addEventListener("dragover", function(e){
+    if(!tieneFicheros(e)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect="copy";
+  });
+  zona.addEventListener("dragleave", function(){
+    arrastres=Math.max(0,arrastres-1);
+    if(!arrastres) zona.classList.remove("pg-arrastrando");
+  });
+  zona.addEventListener("drop", function(e){
+    if(!tieneFicheros(e)) return;
+    e.preventDefault();
+    arrastres=0;
+    zona.classList.remove("pg-arrastrando");
+    procesarFicherosImportar(Array.from((e.dataTransfer&&e.dataTransfer.files)||[]));
+  });
+  /* si se suelta fuera de la zona, el navegador abriría el fichero y se perdería lo escrito */
+  ["dragover","drop"].forEach(function(evt){
+    document.addEventListener(evt, function(e){
+      if(!tieneFicheros(e)) return;
+      var dentro = e.target && e.target.closest && e.target.closest("#zonaImportar");
+      if(!dentro) e.preventDefault();
     });
   });
   $("analizarImportar").addEventListener("click", function(){
