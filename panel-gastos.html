@@ -167,6 +167,7 @@ html[data-tema="oscuro"] .pg{
 .pg-fech{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;color:var(--tinta2);white-space:nowrap;}
 .pg-conc{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .pg-imp{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap;}
+.pg-imp--ingreso{color:var(--pino);font-weight:600;}
 .pg-x{background:none;border:none;color:var(--icono);font-size:16px;line-height:1;cursor:pointer;padding:2px 4px;}
 .pg-x:hover{color:var(--peligro);}
 .pg-mov-editar{background:none;border:none;color:var(--icono);font-size:13px;line-height:1;cursor:pointer;padding:2px 4px;}
@@ -738,6 +739,7 @@ var I18N = {
     "movs.vacioTpl":"Todavía no hay nada apuntado en {{mes}}. Empieza por el gasto más reciente.",
     "movs.yaDescontado":"Ya descontado ({{n}})","movs.pendiente":"Pendiente este mes ({{n}})",
     "mov.borrarAria":"Borrar {{concepto}}","mov.editarAria":"Editar {{concepto}}",
+    "ahorro.ingresosMovimientos":"Ingresos de movimientos",
     "ahorro.ingresoPresupuesto":"Ingreso − presupuesto","ahorro.presupuestoSinGastar":"Presupuesto sin gastar",
     "ahorro.aporteMes":"Aporte al bote este mes","ahorro.boteAcumulado":"Bote acumulado",
     "ahorro.vacio":"Añade tus ingresos del mes para empezar a generar el bote de ahorro.",
@@ -843,6 +845,7 @@ var I18N = {
     "movs.vacioTpl":"Nothing logged yet in {{mes}}. Start with your most recent expense.",
     "movs.yaDescontado":"Already charged ({{n}})","movs.pendiente":"Pending this month ({{n}})",
     "mov.borrarAria":"Delete {{concepto}}","mov.editarAria":"Edit {{concepto}}",
+    "ahorro.ingresosMovimientos":"Income from transactions",
     "ahorro.ingresoPresupuesto":"Income − budget","ahorro.presupuestoSinGastar":"Unspent budget",
     "ahorro.aporteMes":"Contribution to the pot this month","ahorro.boteAcumulado":"Total saved",
     "ahorro.vacio":"Add your income for the month to start building your savings pot.",
@@ -1267,16 +1270,14 @@ function generarRecurrentesParaMes(m){
     var guard=0;
     while(rec.proximaFecha<=finMes && guard<120){
       guard++;
-      var mesOcurrencia=mesDe(rec.proximaFecha);
-      if(rec.tipo==="ingreso"){
-        estado.ingresos[mesOcurrencia]=(estado.ingresos[mesOcurrencia]||0)+rec.importe;
-      }else{
-        estado.gastos.push({
-          id:"g-"+Date.now().toString(36)+Math.random().toString(36).slice(2,7),
-          concepto:rec.concepto, importe:rec.importe, categoria:rec.categoria||"otros",
-          fecha:rec.proximaFecha, recurrenteId:rec.id
-        });
-      }
+      var mov={
+        id:"g-"+Date.now().toString(36)+Math.random().toString(36).slice(2,7),
+        concepto:rec.concepto, importe:rec.importe, categoria:rec.categoria||"otros",
+        fecha:rec.proximaFecha, recurrenteId:rec.id
+      };
+      /* también los ingresos recurrentes (la nómina) se ven como movimiento en la lista */
+      if(rec.tipo==="ingreso") mov.tipo="ingreso";
+      estado.gastos.push(mov);
       cambios=true;
       rec.proximaFecha=siguienteFecha(rec.proximaFecha,rec.frecuencia);
     }
@@ -1313,17 +1314,35 @@ var $=function(id){ return document.getElementById(id); };
 /* deriva del estado los datos del mes activo; funciones que solo necesitan actualizar
    una parte de la pantalla (editar un movimiento, cambiar de vista en el desglose) llaman
    a esto en vez de a render() completo, para no tocar ni la barra de meses ni el resto */
+/* los ingresos se guardan como un movimiento más (tipo:"ingreso") para que se vean en la lista;
+   todo lo que calcula gasto (total, desglose, gráfico, presupuesto) los deja fuera */
+/* cambiar de mes desde código (importar, añadir gasto en otro mes...) tiene que arrastrar
+   también el año que se está mostrando; si no, la barra sigue en el año anterior y da la
+   sensación de que lo importado no ha entrado */
+function irAMes(m){
+  if(!m) return;
+  mes=m;
+  anioMostrado=anioDe(m);
+}
+function esIngreso(g){ return g && g.tipo==="ingreso"; }
+function ingresosDeMovimientos(m){
+  return estado.gastos.filter(function(g){ return esIngreso(g) && mesDe(g.fecha)===m; })
+                      .reduce(function(s,g){ return s+g.importe; },0);
+}
+/* ingreso del mes = lo que se haya escrito a mano + los ingresos importados o recurrentes */
+function ingresoDeMes(m){ return (estado.ingresos[m]||0) + ingresosDeMovimientos(m); }
 function datosDelMes(){
   var delMes = estado.gastos.filter(function(g){ return mesDe(g.fecha)===mes; })
                             .sort(function(a,b){ return a.fecha<b.fecha?1:(a.fecha>b.fecha?-1:0); });
-  var total = delMes.reduce(function(s,g){ return s+g.importe; },0);
+  var gastosMes = delMes.filter(function(g){ return !esIngreso(g); });
+  var total = gastosMes.reduce(function(s,g){ return s+g.importe; },0);
   var presupuesto = presupuestoDeMes(mes);
   var hoyStr = hoyISO();
   var movsDescontados = delMes.filter(function(g){ return g.fecha<=hoyStr; });
   var movsPendientes = delMes.filter(function(g){ return g.fecha>hoyStr; });
   var actual=mesDe(hoyISO());
   var diasTr = mes>actual ? 0 : (mes===actual ? new Date().getDate() : diasDelMes(mes));
-  return {delMes:delMes, total:total, presupuesto:presupuesto,
+  return {delMes:delMes, gastosMes:gastosMes, total:total, presupuesto:presupuesto,
     movsDescontados:movsDescontados, movsPendientes:movsPendientes, diasTr:diasTr};
 }
 /* centra la pestaña del mes activo — se llama solo cuando de verdad cambia el mes visible,
@@ -1334,7 +1353,8 @@ function centrarPestanaActiva(){
   if(act) act.scrollIntoView({inline:"center",block:"nearest"});
 }
 function renderDesglose(d){
-  var delMes=d.delMes, total=d.total, presupuesto=d.presupuesto, diasTr=d.diasTr;
+  /* el desglose y el gráfico son de gasto: los ingresos no entran */
+  var delMes=d.gastosMes, total=d.total, presupuesto=d.presupuesto, diasTr=d.diasTr;
   var restante = presupuesto - total;
   var suma={};
   delMes.forEach(function(g){ suma[g.categoria]=(suma[g.categoria]||0)+g.importe; });
@@ -1395,11 +1415,13 @@ function renderMovs(d){
           '<button class="pg-link" type="button" data-cancelarmov="'+g.id+'">'+t("btn.cancelar")+'</button>'+
         '</div></div>';
     }
+    var ingreso=esIngreso(g);
     return '<div class="pg-mov" data-cat="'+g.categoria+'">'+
       '<span class="pg-fech">'+diaCorto(g.fecha)+'</span>'+
       '<span class="pg-conc" title="'+esc(g.concepto)+'">'+esc(g.concepto)+'</span>'+
-      '<span class="pg-punto" style="background:'+c.color+'" title="'+esc(c.nombre)+'"></span>'+
-      '<span class="pg-imp">'+eur.format(g.importe)+'</span>'+
+      '<span class="pg-punto"'+(ingreso?' style="background:transparent"':' style="background:'+c.color+'"')+
+        ' title="'+(ingreso?t("rec.ingreso"):esc(c.nombre))+'"></span>'+
+      '<span class="pg-imp'+(ingreso?" pg-imp--ingreso":"")+'">'+(ingreso?"+":"")+eur.format(g.importe)+'</span>'+
       '<button class="pg-mov-editar" type="button" data-editarmov="'+g.id+'" aria-label="'+t("mov.editarAria",{concepto:esc(g.concepto)})+'">✎</button>'+
       '<button class="pg-x" data-del="'+g.id+'" aria-label="'+t("mov.borrarAria",{concepto:esc(g.concepto)})+'">×</button></div>';
   };
@@ -1423,14 +1445,18 @@ function render(){
   var d = datosDelMes();
   var delMes=d.delMes, total=d.total, presupuesto=d.presupuesto, diasTr=d.diasTr,
       movsDescontados=d.movsDescontados, movsPendientes=d.movsPendientes;
-  var totalDescontado = movsDescontados.reduce(function(s,g){ return s+g.importe; },0);
-  var totalPendiente = movsPendientes.reduce(function(s,g){ return s+g.importe; },0);
+  /* la barra de presupuesto mide gasto: los ingresos del mes no cuentan */
+  var totalDescontado = movsDescontados.filter(function(g){ return !esIngreso(g); })
+                                       .reduce(function(s,g){ return s+g.importe; },0);
+  var totalPendiente = movsPendientes.filter(function(g){ return !esIngreso(g); })
+                                     .reduce(function(s,g){ return s+g.importe; },0);
 
   /* pestañas de mes, agrupadas por año (el centrado de la pestaña activa NO va aquí:
      ver centrarPestanaActiva) */
   var listaM = listaMeses();
   var totalPorMes={};
   estado.gastos.forEach(function(g){
+    if(esIngreso(g)) return;
     var m=mesDe(g.fecha); totalPorMes[m]=(totalPorMes[m]||0)+g.importe;
   });
   var aniosDisponibles = [...new Set(listaM.map(anioDe))].sort();
@@ -1438,7 +1464,8 @@ function render(){
   var listaMAnio = listaM.filter(function(m){ return anioDe(m)===anioMostrado; });
 
   $("btnAnioSelector").textContent = String(anioMostrado);
-  $("btnAnioSelector").hidden = aniosDisponibles.length<2;
+  /* el año se ve siempre: además de poder saltar de año, sirve para saber en cuál estás */
+  $("btnAnioSelector").hidden = false;
   $("menuAnios").innerHTML = aniosDisponibles.map(function(a){
     return '<button type="button" class="pg-anio-opcion" data-anio="'+a+'" aria-pressed="'+(a===anioMostrado)+'">'+a+'</button>';
   }).join("");
@@ -1498,9 +1525,13 @@ function render(){
   if(document.activeElement!==$("presupuestoFijarTodos")){
     $("presupuestoFijarTodos").checked = !!estado.presupuestoFijo && !estado.presupuestos[mes];
   }
-  var ingreso = estado.ingresos[mes] || 0;
+  /* el campo edita el ingreso escrito a mano; para el ahorro se le suman los ingresos que ya
+     están como movimiento (importados o recurrentes) */
+  var ingresoManual = estado.ingresos[mes] || 0;
+  var ingresoMovs = ingresosDeMovimientos(mes);
+  var ingreso = ingresoManual + ingresoMovs;
   var inpIng=$("ingresos");
-  if(document.activeElement!==inpIng) inpIng.value = ingreso ? decimalATexto(ingreso) : "";
+  if(document.activeElement!==inpIng) inpIng.value = ingresoManual ? decimalATexto(ingresoManual) : "";
 
   /* ahorro y bote */
   var ahorroPlan = ingreso - presupuesto;
@@ -1509,6 +1540,8 @@ function render(){
   var bote = boteTotal();
   $("ahorroResumen").innerHTML = (ingreso>0 || presupuesto>0) ?
     '<div class="pg-acum" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--linea)">'+
+      (ingresoMovs>0 ? '<div class="pg-pie" style="margin-bottom:4px"><span>'+t("ahorro.ingresosMovimientos")+
+        '</span><span class="pg-mono">'+eur.format(ingresoMovs)+'</span></div>' : '')+
       '<div class="pg-pie"><span>'+t("ahorro.ingresoPresupuesto")+'</span><span class="pg-mono">'+eur.format(ahorroPlan)+'</span></div>'+
       '<div class="pg-pie" style="margin-top:4px"><span>'+t("ahorro.presupuestoSinGastar")+'</span><span class="pg-mono">'+eur.format(sobraPresupuesto)+'</span></div>'+
       '<div class="pg-pie" style="margin-top:8px;font-weight:600;color:var(--tinta)"><span>'+t("ahorro.aporteMes")+'</span><span class="pg-mono">'+eur.format(aporteMes)+'</span></div>'+
@@ -1521,13 +1554,17 @@ function render(){
   renderListaRecurrentes();
 }
 
-/* suma de (ingreso - gastado) en cada mes donde se haya indicado un ingreso */
+/* suma de (ingreso - gastado) en cada mes con ingreso, ya venga escrito a mano o de
+   movimientos de tipo ingreso (importados o recurrentes) */
 function boteTotal(){
   var total=0;
-  Object.keys(estado.ingresos).forEach(function(m){
-    var ingreso=estado.ingresos[m]||0;
+  var meses={};
+  Object.keys(estado.ingresos).forEach(function(m){ if(estado.ingresos[m]) meses[m]=true; });
+  estado.gastos.forEach(function(g){ if(esIngreso(g)) meses[mesDe(g.fecha)]=true; });
+  Object.keys(meses).forEach(function(m){
+    var ingreso=ingresoDeMes(m);
     if(ingreso<=0) return;
-    var gastado=estado.gastos.filter(function(g){ return mesDe(g.fecha)===m; })
+    var gastado=estado.gastos.filter(function(g){ return !esIngreso(g) && mesDe(g.fecha)===m; })
                               .reduce(function(s,g){ return s+g.importe; },0);
     total += ingreso-gastado;
   });
@@ -1677,7 +1714,7 @@ function anadir(){
     categoria: categoria,
     fecha: fecha
   });
-  mes = mesDe(fecha);
+  irAMes(mesDe(fecha));
   guardarEstado();
   $("concepto").value=""; $("importe").value="";
   render();
@@ -3212,23 +3249,21 @@ function inicializarEventos(){
          sumando al ingreso de ese mes. listaMeses() saca las pestañas de ahí, así que los meses
          que no existieran aparecen solos */
       validas.forEach(function(f){
-        var importe=Math.round(f.importe*100)/100;
-        if(f.esGasto===false){
-          var m=mesDe(f.fecha);
-          estado.ingresos[m]=Math.round(((estado.ingresos[m]||0)+importe)*100)/100;
-          return;
-        }
-        estado.gastos.push({
+        var mov={
           id: Date.now()+"-"+Math.random().toString(36).slice(2,7),
           concepto: (f.concepto||"").trim() || t("import.sinConcepto"),
-          importe: importe,
+          importe: Math.round(f.importe*100)/100,
           categoria: f.categoria || "otros",
           fecha: f.fecha
-        });
+        };
+        /* los ingresos se guardan como movimiento para que se vean en la lista, marcados
+           con tipo:"ingreso" para que no cuenten como gasto en ningún cálculo */
+        if(f.esGasto===false) mov.tipo="ingreso";
+        estado.gastos.push(mov);
       });
       guardarEstado();
       /* se abre el mes más reciente de lo importado, no el último de la lista */
-      mes = validas.map(function(f){ return mesDe(f.fecha); }).sort().pop();
+      irAMes(validas.map(function(f){ return mesDe(f.fecha); }).sort().pop());
     }
     cerrarModal("overlayImportar");
     $("textoImportar").value="";
