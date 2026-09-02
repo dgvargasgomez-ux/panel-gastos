@@ -284,6 +284,16 @@ html[data-tema="oscuro"] .pg{
   font-size:12.5px;font-weight:600;color:var(--pino);text-align:center;padding:12px;pointer-events:none;}
 #zonaImportar.pg-arrastrando .pg-soltar-velo{display:flex;}
 
+/* velo de "procesando" mientras se leen los ficheros (del botón o arrastrados) */
+.pg-proceso-velo{position:absolute;inset:0;display:none;align-items:center;justify-content:center;gap:10px;
+  border-radius:3px;background:var(--hover-bg);font-size:12.5px;font-weight:600;color:var(--pino);
+  pointer-events:none;animation:pg-aparecer .18s ease;}
+#zonaImportar.pg-procesando .pg-proceso-velo{display:flex;}
+.pg-spinner{width:17px;height:17px;flex:none;border-radius:50%;
+  border:2px solid var(--linea);border-top-color:var(--pino);animation:pg-girar .7s linear infinite;}
+@keyframes pg-girar{to{transform:rotate(360deg);}}
+@keyframes pg-aparecer{from{opacity:0;}to{opacity:1;}}
+
 .pg-rec-fila{display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid var(--linea);}
 .pg-rec-fila:last-child{border-bottom:none;}
 .pg-rec-info{flex:1;min-width:0;}
@@ -465,6 +475,9 @@ html[data-tema="oscuro"] .pg{
       <p class="pg-soltar" id="txtSoltar"></p>
       <p class="pg-error" id="errorImportar"></p>
       <div class="pg-soltar-velo" aria-hidden="true"><span id="txtSoltarVelo"></span></div>
+      <div class="pg-proceso-velo" aria-hidden="true">
+        <span class="pg-spinner"></span><span id="txtProcesando"></span>
+      </div>
     </div>
 
     <div class="pg-card" id="cardRecurrentes">
@@ -679,6 +692,7 @@ var I18N = {
     "placeholder.importar":"15/03/2026  Compra supermercado  -42,10€\n16/03/2026  Nómina  +1800,00€",
     "btn.subirFichero":"Subir fichero(s)","btn.analizar":"Analizar","titulo.revisar":"Revisa los movimientos",
     "txt.soltar":"…o arrastra aquí tus ficheros","txt.soltarVelo":"Suelta para importar",
+    "txt.procesando":"Procesando…",
     "import.transferencia":"Posible transferencia — excluida",
     "th.fecha":"Fecha","th.concepto":"Concepto","th.importe":"Importe","th.categoria":"Categoría",
     "btn.cancelar":"Cancelar","btn.importar":"Importar {{n}} movimientos",
@@ -783,6 +797,7 @@ var I18N = {
     "placeholder.importar":"15/03/2026  Grocery store  -42.10€\n16/03/2026  Paycheck  +1800.00€",
     "btn.subirFichero":"Upload file(s)","btn.analizar":"Analyze","titulo.revisar":"Review the transactions",
     "txt.soltar":"…or drag your files here","txt.soltarVelo":"Drop to import",
+    "txt.procesando":"Processing…",
     "import.transferencia":"Possible transfer — excluded",
     "th.fecha":"Date","th.concepto":"Description","th.importe":"Amount","th.categoria":"Category",
     "btn.cancelar":"Cancel","btn.importar":"Import {{n}} transactions",
@@ -2177,7 +2192,9 @@ function detectarTransferencias(filas){
       if(usadas[j]) continue;
       var b=filas[j];
       if(usadas[j] || Math.round(Math.abs(b.importe)*100)!==absA) continue;
-      if(a.incluir===b.incluir) continue;
+      /* una transferencia es un par gasto/ingreso del mismo importe: hay que mirar el tipo,
+         no si están marcadas (ahora entran marcadas todas las filas) */
+      if(a.esGasto===b.esGasto) continue;
       var dias=Math.abs(Math.round((new Date(b.fecha).getTime()-new Date(a.fecha).getTime())/86400000));
       if(dias>2) continue;
       usadas[i]=true; usadas[j]=true;
@@ -2193,6 +2210,16 @@ function procesarFicherosImportar(files){
   files=(files||[]).filter(Boolean);
   if(!files.length) return;
   $("errorImportar").textContent="";
+  /* el velo de "procesando" se mantiene un mínimo de un segundo aunque el fichero se analice
+     al instante: si no, con un CSV pequeño parpadea y no da sensación de que haya hecho nada */
+  var zona=$("zonaImportar"), desde=Date.now();
+  zona.classList.add("pg-procesando");
+  function alTerminar(fn){
+    setTimeout(function(){
+      zona.classList.remove("pg-procesando");
+      fn();
+    }, Math.max(0, 1000-(Date.now()-desde)));
+  }
   Promise.all(files.map(function(f){
     var esPDF = f.type==="application/pdf" || /\.pdf$/i.test(f.name);
     if(esPDF) return extraerTextoDePDF(f).catch(function(){ return ""; });
@@ -2212,7 +2239,9 @@ function procesarFicherosImportar(files){
   })).then(function(textos){
     var todasFilas=[];
     textos.forEach(function(txt){ todasFilas=todasFilas.concat(analizarTexto(txt)); });
-    mostrarPreviaImportacion(detectarTransferencias(todasFilas));
+    alTerminar(function(){ mostrarPreviaImportacion(detectarTransferencias(todasFilas)); });
+  }).catch(function(){
+    alTerminar(function(){ $("errorImportar").textContent=t("import.errorVacio"); });
   });
 }
 function mostrarPreviaImportacion(filas){
@@ -2641,6 +2670,7 @@ function aplicarIdioma(){
   $("subirFichero").textContent = t("btn.subirFichero");
   $("txtSoltar").textContent = t("txt.soltar");
   $("txtSoltarVelo").textContent = t("txt.soltarVelo");
+  $("txtProcesando").textContent = t("txt.procesando");
   $("analizarImportar").textContent = t("btn.analizar");
   $("tituloRevisar").textContent = t("titulo.revisar");
   $("thFecha").textContent = t("th.fecha");
